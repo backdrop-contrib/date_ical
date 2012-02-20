@@ -61,5 +61,4 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style_rss {
     unset($this->view->row_index);
     return $output;
   }
-
 }

@@ -1,4 +1,5 @@
 <?php
+
 /**
  * @file
  * Contains the iCal row style plugin.
@@ -54,7 +55,6 @@ class date_ical_plugin_row_ical_feed extends views_plugin_row {
   }
 
   function pre_render($values) {
-
     // @TODO When the date is coming in through a relationship, the nid
     // of the view is not the right node to use, then we need the related node.
     // Need to sort out how that should be handled.
@@ -91,11 +91,9 @@ class date_ical_plugin_row_ical_feed extends views_plugin_row {
     if (array_key_exists($this->language, $substitutions)) {
       $this->language = $substitutions[$this->language];
     }
-
   }
 
   function render($row) {
-
     global $base_url;
     $id = $row->{$this->field_alias};
     if (!is_numeric($id)) {
@@ -183,7 +181,9 @@ class date_ical_plugin_row_ical_feed extends views_plugin_row {
     $event['start'] = $start->format($all_day ? DATE_FORMAT_ICAL_DATE : DATE_FORMAT_ICAL);
     $event['end'] = $end->format($all_day ? DATE_FORMAT_ICAL_DATE : DATE_FORMAT_ICAL);
     $event['description'] = date_ical_escape_text(($item_text));
-    $event['url'] = url(entity_uri($this->entity_type, $entity), array('absolute' => TRUE));
+    $uri = entity_uri($this->entity_type, $entity);
+    $uri['options']['absolute'] = TRUE;
+    $event['url'] = url($uri['path'], $uri['options']);
     $event['uid'] = !empty($entity->date_id) ? $entity->date_id[0] : $event['url'];
     $event['rrule'] = $is_field && array_key_exists('rrule', $item) ? $item['rrule'] : '';
 
@@ -195,4 +195,3 @@ class date_ical_plugin_row_ical_feed extends views_plugin_row {
       ));
   }
 }
-

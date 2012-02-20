@@ -13,8 +13,8 @@
  * be compliant with the iCal spec.
  *
  * @see http://tools.ietf.org/html/rfc5545#section-3.1
- * @see date-vevent.tpl.php.
- * @see date-valarm.tpl.php.
+ * @see date-vevent.tpl.php
+ * @see date-valarm.tpl.php
  *
  * @ingroup themeable
  */

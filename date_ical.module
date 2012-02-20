@@ -1,12 +1,12 @@
 <?php
+
 /**
  * @file
  * Adds ical functionality to Views.
  */
 
 /**
- * Implementation of hook_views_api().
- *
+ * Implements hook_views_api().
  */
 function date_ical_views_api() {
   return array(
@@ -18,38 +18,37 @@ function date_ical_views_api() {
 /**
  * Implements hook_theme().
  */
-function date_ical_theme() {
+function date_ical_theme($existing, $type, $theme, $path) {
   return array(
     'date_ical_icon' => array(
-      'variables' => array('url'),
-      ),
-    );
+      'variables' => array('url' => NULL),
+    ),
+  );
 }
 
 /**
  * The theme for the ical icon.
  */
-function theme_date_ical_icon($vars) {
-  $url = $vars['url'];
+function theme_date_ical_icon($variables) {
+  $url = $variables['url'];
   $variables = array(
     'path' => drupal_get_path('module', 'date_ical') . '/images/ical-feed-icon-34x14.png',
     'title' => t('Add to calendar'), t('Add to calendar'),
   );
   if ($image = theme('image', $variables)) {
-    return '<div style="text-align:right"><a href="' . check_url($url) . '" class="ical-icon" title="ical">' . $image . '</a></div>';
+    return '<div style="text-align: right;"><a href="' . check_url($url) . '" class="ical-icon" title="ical">' . $image . '</a></div>';
   }
 }
 
 /**
- * Implementation of hook_preprocess_node().
- * 
- * Hide extraneous information when printing an ical view.
- * The same thing can be done in the theme for other entities,
- * and this function can be overridden in the theme to produce 
- * different results for nodes.
+ * Implements hook_preprocess_HOOK() for nodes.
+ *
+ * Hide extraneous information when printing an ical view. The same thing can be
+ * done in the theme for other entities, and this function can be overridden in
+ * the theme to produce different results for nodes.
  */
-function date_ical_preprocess_node(&$variables){
-  if ($variables['view_mode'] == 'ical') {
+function date_ical_preprocess_node(&$variables) {
+  if (isset($variables['view_mode']) && $variables['view_mode'] == 'ical') {
     // We hide the page elements we won't want to see.
     // The display of the body and other fields will be controlled
     // by the Display Fields settings for the ical view mode.
@@ -67,20 +66,19 @@ function date_ical_preprocess_node(&$variables){
  *
  * Add an 'iCal' view mode for all entities, similar to RSS view mode.
  */
-function date_ical_entity_info_alter(&$info) {
-  $data = entity_get_info();
-  foreach ($data as $entity_type => $entity_info) {
-    $info[$entity_type]['view modes'] += array(
+function date_ical_entity_info_alter(&$entity_info) {
+  foreach ($entity_info as $entity_type => $info) {
+    $entity_info[$entity_type]['view modes'] += array(
       'ical' => array(
         'label' => t('iCal'),
-        'custom settings' => FALSE,
+        'custom settings' => TRUE,
       ),
     );
   }
 }
 
 /**
- * Implementation of hook_views_plugins
+ * Implements hook_views_plugins().
  */
 function date_ical_views_plugins() {
   $module_path = drupal_get_path('module', 'date_ical');
@@ -93,10 +91,10 @@ function date_ical_views_plugins() {
         'title' => t('Date iCal Feed'),
         'help' => t('Generates an iCal VCALENDAR feed from a view.'),
         'handler' => 'date_ical_plugin_style_ical_feed',
-        'path' => "$module_path",
-        'theme' => 'date_vcalendar',
+        'path' => $module_path,
+        'theme' => 'date_ical_vcalendar',
         'theme file' => 'theme.inc',
-        'theme path' => "$module_path",
+        'theme path' => $module_path,
         'uses fields' => TRUE,
         'uses grouping' => FALSE,
         'uses row plugin' => TRUE,
@@ -110,10 +108,10 @@ function date_ical_views_plugins() {
         'title' => t('Date iCal Entities'),
         'help' => t('Display each entity as an iCal VEVENT item.'),
         'handler' => 'date_ical_plugin_row_ical_feed',
-        'path' => "$module_path",
-        'theme' => 'date_vevent',
+        'path' => $module_path,
+        'theme' => 'date_ical_vevent',
         'theme file' => 'theme.inc',
-        'theme path' => "$module_path",
+        'theme path' => $module_path,
         'uses options' => TRUE,
         'uses fields' => FALSE,
         'type' => 'feed',
@@ -124,7 +122,8 @@ function date_ical_views_plugins() {
 }
 
 /**
- * Implemention of hook_theme_registry_alter().
+ * Implements hook_theme_registry_alter().
+ *
  * Technique borrowed from Display Suite module.
  * Add a custom preprocess hook that will work for all types of entities
  */
@@ -133,7 +132,9 @@ function date_ical_theme_registry_alter(&$theme_registry) {
   $entity_info = entity_get_info();
   foreach ($entity_info as $entity => $info) {
     // User uses user_profile for theming.
-    if ($entity == 'user') $entity = 'user_profile';
+    if ($entity == 'user') {
+      $entity = 'user_profile';
+    }
 
     // Only add preprocess functions if entity exposes theme function.
     if (isset($theme_registry[$entity])) {
@@ -156,8 +157,8 @@ function date_ical_theme_registry_alter(&$theme_registry) {
  * Technique borrowed from Display Suite module.
  * Add ical template suggestions to all types of entities.
  */
-function date_ical_preprocess(&$vars) {
-  if (isset($vars['elements']) && isset($vars['elements']['#entity_type']) && isset($vars['elements']['#bundle']) && $vars['view_mode'] == 'ical') {
+function date_ical_preprocess(&$vars, $hook) {
+  if (isset($vars['elements']) && isset($vars['elements']['#entity_type']) && isset($vars['elements']['#bundle']) && isset($vars['view_mode']) && $vars['view_mode'] == 'ical') {
     $vars['theme_hook_suggestions'][] = $vars['elements']['#entity_type'] . '__ical';
     $vars['theme_hook_suggestions'][] = $vars['elements']['#entity_type'] . '__' . $vars['elements']['#bundle'] . '__ical';
   }

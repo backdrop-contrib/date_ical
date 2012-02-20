@@ -1,1 +1,6 @@
 name = Date iCal
+description = Allows creation of an iCal feed in Views.
+core = 7.x
+dependencies[] = date_views
+files[] = date_ical_plugin_row_ical_feed.inc
+files[] = date_ical_plugin_style_ical_feed.inc

@@ -8,10 +8,8 @@
 /**
  * Preprocess an iCal feed
  */
-function template_preprocess_date_ical_plugin_style_ical_feed(&$vars) {
-  global $base_url;
-  global $language;
-  $view = $vars['view'];
+function template_preprocess_date_ical_vcalendar(&$variables) {
+  $view = $variables['view'];
   $view_title = $view->get_title();
 
   $title = variable_get('site_name', 'Drupal');
@@ -20,11 +18,11 @@ function template_preprocess_date_ical_plugin_style_ical_feed(&$vars) {
   }
   $title .= !empty($view_title) ? ': ' . $view_title : '';
 
-  $vars['title'] = check_plain($title);
+  $variables['title'] = check_plain($title);
 
   // During live preview we don't want to output the header since the contents
   // of the feed are being displayed inside a normal HTML page.
-  if (empty($vars['view']->live_preview)) {
+  if (empty($variables['view']->live_preview)) {
 
     // Keep devel module from appending queries to ical export.
     $GLOBALS['devel_shutdown'] = FALSE;
@@ -35,9 +33,8 @@ function template_preprocess_date_ical_plugin_style_ical_feed(&$vars) {
 /**
  * Default theme function for all iCal rows.
  */
-function template_preprocess_date_ical_plugin_row_ical_feed(&$vars) {
-  $view     = &$vars['view'];
-  $options  = &$vars['options'];
-  $item     = &$vars['row'];
-
+function template_preprocess_date_ical_vevent(&$variables) {
+  $view     = &$variables['view'];
+  $options  = &$variables['options'];
+  $item     = &$variables['row'];
 }

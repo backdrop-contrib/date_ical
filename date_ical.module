@@ -82,7 +82,7 @@ function date_ical_entity_info_alter(&$entity_info) {
  */
 function date_ical_views_plugins() {
   $module_path = drupal_get_path('module', 'date_ical');
-  module_load_include('inc', 'date_ical', 'theme.inc');
+  $theme_path = $module_path . '/theme';
 
   $data = array(
     'module' => 'date_ical', // This just tells our themes are elsewhere.
@@ -94,7 +94,7 @@ function date_ical_views_plugins() {
         'path' => $module_path,
         'theme' => 'date_ical_vcalendar',
         'theme file' => 'theme.inc',
-        'theme path' => $module_path,
+        'theme path' => $theme_path,
         'uses fields' => TRUE,
         'uses grouping' => FALSE,
         'uses row plugin' => TRUE,
@@ -111,7 +111,7 @@ function date_ical_views_plugins() {
         'path' => $module_path,
         'theme' => 'date_ical_vevent',
         'theme file' => 'theme.inc',
-        'theme path' => $module_path,
+        'theme path' => $theme_path,
         'uses options' => TRUE,
         'uses fields' => FALSE,
         'type' => 'feed',

@@ -138,18 +138,18 @@ function date_ical_theme_registry_alter(&$theme_registry) {
 
     // Only add preprocess functions if entity exposes theme function.
     if (isset($theme_registry[$entity])) {
-      $theme_registry[$entity]['preprocess functions'][] = 'date_ical_preprocess';
+      $theme_registry[$entity]['preprocess functions'][] = 'date_ical_preprocess_date_ical';
     }
   }
 
   // Support for File Entity.
   if (isset($theme_registry['file_entity'])) {
-    $theme_registry['file_entity']['preprocess functions'][] = 'date_ical_preprocess';
+    $theme_registry['file_entity']['preprocess functions'][] = 'date_ical_preprocess_date_ical';
   }
 
   // Support for Entity API.
   if (isset($theme_registry['entity'])) {
-    $theme_registry['entity']['preprocess functions'][] = 'date_ical_preprocess';
+    $theme_registry['entity']['preprocess functions'][] = 'date_ical_preprocess_date_ical';
   }
 }
 
@@ -157,7 +157,7 @@ function date_ical_theme_registry_alter(&$theme_registry) {
  * Technique borrowed from Display Suite module.
  * Add ical template suggestions to all types of entities.
  */
-function date_ical_preprocess(&$vars, $hook) {
+function date_ical_preprocess_date_ical(&$vars) {
   if (isset($vars['elements']) && isset($vars['elements']['#entity_type']) && isset($vars['elements']['#bundle']) && isset($vars['view_mode']) && $vars['view_mode'] == 'ical') {
     $vars['theme_hook_suggestions'][] = $vars['elements']['#entity_type'] . '__ical';
     $vars['theme_hook_suggestions'][] = $vars['elements']['#entity_type'] . '__' . $vars['elements']['#bundle'] . '__ical';

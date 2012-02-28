@@ -3,5 +3,6 @@ description = Allows creation of an iCal feed in Views.
 package = Date/Time
 core = 7.x
 dependencies[] = date_views
+dependencies[] = entity
 files[] = date_ical_plugin_row_ical_feed.inc
 files[] = date_ical_plugin_style_ical_feed.inc

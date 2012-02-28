@@ -5,6 +5,8 @@ Date iCal 7.x
 Version 7.x-1.x-dev
 ===================
 
+- Add dependency on Entity module.
+
 ===================
 Version 7.x-1.0
 ===================

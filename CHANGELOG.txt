@@ -5,6 +5,7 @@ Date iCal 7.x
 Version 7.x-1.x-dev
 ===================
 
+- Issue #1535312, Use feed_icon class for ical icon.
 - Better methods to hide the title and comments.
 - Issue #1529326, Hide the links.
 - Add dependency on Entity module.

@@ -36,7 +36,7 @@ function theme_date_ical_icon($variables) {
     'title' => t('Add to calendar'), t('Add to calendar'),
   );
   if ($image = theme('image', $variables)) {
-    return '<div style="text-align: right;"><a href="' . check_url($url) . '" class="ical-icon" title="ical">' . $image . '</a></div>';
+    return '<div class="feed_icon"><a href="' . check_url($url) . '" class="ical-icon" title="ical">' . $image . '</a></div>';
   }
 }
 

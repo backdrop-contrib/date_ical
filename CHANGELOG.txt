@@ -5,7 +5,10 @@ Date iCal 7.x
 Version 7.x-1.x-dev
 ===================
 
+- Better methods to hide the title and comments.
+- Issue #1529326, Hide the links.
 - Add dependency on Entity module.
+- Add the Date/Time package to .info file.
 
 ===================
 Version 7.x-1.0

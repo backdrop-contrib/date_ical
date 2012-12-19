@@ -2,7 +2,9 @@
 
 /**
  * @file
- * Adds ical functionality to Views.
+ * Adds ical functionality to Views, and an iCal parser to Feeds.
+ *
+ * TODO Figure out how to incorporate VVENUE information into the parser.
  */
 
 /**
@@ -11,7 +13,7 @@
 function date_ical_views_api() {
   return array(
     'api' => 3,
-    'path' => drupal_get_path('module', 'date_ical'),
+    'path' => drupal_get_path('module', 'date_ical') . '/includes',
   );
 }
 
@@ -36,38 +38,35 @@ function theme_date_ical_icon($variables) {
     'title' => t('Add to calendar'), t('Add to calendar'),
   );
   if ($image = theme('image', $variables)) {
-    return '<div class="feed_icon"><a href="' . check_url($url) . '" class="ical-icon" title="ical">' . $image . '</a></div>';
+    return '<a href="' . check_url($url) . '" class="ical-icon" title="ical">' . $image . '</a>';
   }
 }
 
 /**
  * Implements hook_preprocess_HOOK() for nodes.
  *
- * Hide extraneous information when printing an ical view. The same thing can be
+ * Hide extraneous information when printing an iCal node. The same thing can be
  * done in the theme for other entities, and this function can be overridden in
  * the theme to produce different results for nodes.
  */
 function date_ical_preprocess_node(&$variables) {
   if (isset($variables['view_mode']) && $variables['view_mode'] == 'ical') {
-
     // We hide the page elements we won't want to see.
     // The display of the body and other fields will be controlled
-    // by the Display Fields settings for the ical view mode.
-
+    // by the Manage Display settings for the iCal view mode.
+    
     // Trick the default node template into not displaying the page title by telling it this is page.
     $variables['page'] = TRUE;
     $variables['title_prefix'] = '';
     $variables['title_suffix'] = '';
 
-    // We probably don't want to see the author information in our feed.
+    // We don't want to see the author information in our feed.
     $variables['display_submitted'] = FALSE;
 
-    // No comments in a feed.
+    // Comments and links don't belong in an iCal feed.
     if (isset($variables['content']['comments'])) {
       unset($variables['content']['comments']);
     }
-
-    // No links in a feed.
     if (isset($variables['content']['links'])) {
       unset($variables['content']['links']);
     }
@@ -77,10 +76,13 @@ function date_ical_preprocess_node(&$variables) {
 /**
  * Implements hook_entity_info_alter().
  *
- * Add an 'iCal' view mode for all entities, similar to RSS view mode.
+ * Add an 'iCal' view mode for entities, which will be used by the Views style plugin.
  */
 function date_ical_entity_info_alter(&$entity_info) {
   foreach ($entity_info as $entity_type => $info) {
+    if (!isset($entity_info[$entity_type]['view modes'])) {
+      $entity_info[$entity_type]['view modes'] = array();
+    }
     $entity_info[$entity_type]['view modes'] += array(
       'ical' => array(
         'label' => t('iCal'),
@@ -90,50 +92,8 @@ function date_ical_entity_info_alter(&$entity_info) {
   }
 }
 
-/**
- * Implements hook_views_plugins().
- */
-function date_ical_views_plugins() {
-  $module_path = drupal_get_path('module', 'date_ical');
-  $theme_path = $module_path . '/theme';
-
-  $data = array(
-    'module' => 'date_ical', // This just tells our themes are elsewhere.
-    'style' => array(
-      'date_ical' => array(
-        'title' => t('Date iCal Feed'),
-        'help' => t('Generates an iCal VCALENDAR feed from a view.'),
-        'handler' => 'date_ical_plugin_style_ical_feed',
-        'path' => $module_path,
-        'theme' => 'date_ical_vcalendar',
-        'theme file' => 'theme.inc',
-        'theme path' => $theme_path,
-        'uses fields' => TRUE,
-        'uses grouping' => FALSE,
-        'uses row plugin' => TRUE,
-        'uses options' => TRUE,
-        'type' => 'feed',
-        'even empty' => TRUE,
-      ),
-    ),
-    'row' => array(
-      'date_ical' => array(
-        'title' => t('Date iCal Entities'),
-        'help' => t('Display each entity as an iCal VEVENT item.'),
-        'handler' => 'date_ical_plugin_row_ical_feed',
-        'path' => $module_path,
-        'theme' => 'date_ical_vevent',
-        'theme file' => 'theme.inc',
-        'theme path' => $theme_path,
-        'uses options' => TRUE,
-        'uses fields' => FALSE,
-        'type' => 'feed',
-      ),
-    ),
-  );
-  return $data;
-}
-
+// TODO: I'm pretty sure the following two functions are no longer relevant, since we've moved to the iCalcreator method.
+// They don't really hurt anything, though, so I've left them in for now.
 /**
  * Implements hook_theme_registry_alter().
  *
@@ -141,7 +101,6 @@ function date_ical_views_plugins() {
  * Add a custom preprocess hook that will work for all types of entities
  */
 function date_ical_theme_registry_alter(&$theme_registry) {
-
   $entity_info = entity_get_info();
   foreach ($entity_info as $entity => $info) {
     // User uses user_profile for theming.
@@ -175,4 +134,78 @@ function date_ical_preprocess_date_ical(&$vars) {
     $vars['theme_hook_suggestions'][] = $vars['elements']['#entity_type'] . '__ical';
     $vars['theme_hook_suggestions'][] = $vars['elements']['#entity_type'] . '__' . $vars['elements']['#bundle'] . '__ical';
   }
+}
+
+/**
+ * Implements hook_libraries_info().
+ */
+function date_ical_libraries_info() {
+  $libraries['iCalcreator'] = array(
+    'name' => 'iCalcreator',
+    'vendor url' => 'http://kigkonsult.se/iCalcreator/index.php',
+    'download url' => 'http://kigkonsult.se/downloads/index.php#icalcreator',
+    'version arguments' => array(
+      'file' => 'iCalcreator.class.php',
+      'pattern' => "/define\( 'ICALCREATOR_VERSION', 'iCalcreator ([\d\.]+)' \);/",
+      'lines' => 100,
+    ),
+    'files' => array(
+      'php' => array('iCalcreator.class.php'),
+    ),
+  );
+
+  return $libraries;
+}
+
+////////////////////////////////////////////////////////////////////
+// Additions from the Parser iCal module.
+////////////////////////////////////////////////////////////////////
+/**
+ * Implementation of hook_ctools_plugin_api().
+ */
+function date_ical_ctools_plugin_api($owner, $api) {
+  if ($owner == 'feeds' && $api == 'plugins') {
+    return array('version' => 2);
+  }
+}
+
+/**
+ * Implementation of ctools plugin for feeds hook_feeds_plugins().
+ */
+function date_ical_feeds_plugins() {
+  $path = drupal_get_path('module', 'date_ical') . '/includes';
+  $info = array();
+  $info['DateIcalFeedsParser'] = array(
+    'hidden' => TRUE,
+    'handler' => array(
+      'parent' => 'FeedsParser',
+      'class' => 'DateIcalFeedsParser',
+      'file' => 'DateIcalFeedsParser.inc',
+      'path' => $path,
+    ),
+  );
+  $info['DateIcalIcalcreatorParser'] = array(
+    'name' => 'iCalCreator parser',
+    'description' => 'Use iCalcreator to parse iCal feeds.',
+    'help' => 'Parse feeds in the iCal format using the iCalcreator library.',
+    'handler' => array(
+      'parent' => 'DateIcalFeedsParser',
+      'class' => 'DateIcalIcalcreatorParser',
+      'file' => 'DateIcalIcalcreatorParser.inc',
+      'path' => $path,
+    ),
+  );
+  $info['DateIcalDateModuleParser'] = array(
+    'name' => 'Date API iCal parser',
+    'description' => 'Use the Date module\'s API to parse iCal feeds.',
+    'help' => 'Parse feeds in the iCal format using API provided by the Date module.',
+    'handler' => array(
+      'parent' => 'DateIcalFeedsParser',
+      'class' => 'DateIcalDateModuleParser',
+      'file' => 'DateIcalDateModuleParser.inc',
+      'path' => $path,
+    ),
+  );
+  
+  return $info;
 }

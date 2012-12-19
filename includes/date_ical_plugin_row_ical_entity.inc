@@ -9,7 +9,7 @@
  * Plugin which creates a view on the resulting object
  * and formats it as an iCal VEVENT.
  */
-class date_ical_plugin_row_ical_feed extends views_plugin_row {
+class date_ical_plugin_row_ical_entity extends views_plugin_row {
 
   // Basic properties that let the row style follow relationships.
   var $base_table = 'node';
@@ -48,9 +48,17 @@ class date_ical_plugin_row_ical_feed extends views_plugin_row {
       '#title' => t('Date field'),
       '#options' => $options,
       '#default_value' => $this->options['date_field'],
-      '#description' => t('Please identify the field to use as the iCal date for each item in this view. Add a Date Filter or a Date Argument to the view to limit results to content in a specified date range.'),
+      '#description' => t('Please identify the field to use as the iCal date for each item in this view.
+          Add a Date Filter or a Date Argument to the view to limit results to content in a specified date range.'),
       '#required' => TRUE,
-      '#prefix' => t("The entity label will be used as the 'summary' and the entity view will be used as the 'description' for the iCal event. To control the description, hide or show fields for the iCal view mode on the 'Display Fields' screen. Keep in mind that any html in the entity view will be stripped out in the feed, to comply with the iCal standards."),
+    );
+    $form['instructions'] = array(
+      // The surrounding <div> is necessary to ensure that the settings dialog expands to show everything.
+      '#prefix' => '<div style="font-size: 90%">',
+      '#suffix' => '</div>',
+      '#markup' => t("Each item's Title and iCal view mode will be included as the SUMMARY and DESCRIPTION elements (respectively) in the VEVENTs output by this View.
+        <br>To change the iCal view mode, configure it on the 'Manage Display' page for each Content Type.
+        Please note that HTML will be stripped from the output (link URLs will become footnotes), to comply with iCal standards."),
     );
   }
 
@@ -133,9 +141,9 @@ class date_ical_plugin_row_ical_feed extends views_plugin_row {
       $entity->date_id[] = 'calendar.' . $entity->nid . '.' . $field_name . '.' . $delta;
 
       if (!empty($item['value'])) {
-        $start = new dateObject($item['value'], $item['timezone_db']);
+        $start = new DateObject($item['value'], $item['timezone_db']);
         if (array_key_exists('value2', $item)) {
-          $end = new dateObject($item['value2'], $item['timezone_db']);
+          $end = new DateObject($item['value2'], $item['timezone_db']);
         }
         else {
           $end = clone $start;
@@ -143,8 +151,8 @@ class date_ical_plugin_row_ical_feed extends views_plugin_row {
       }
     }
     elseif (!$is_field && !empty($item)) {
-      $start = new dateObject($item, $item['timezone_db']);
-      $end   = new dateObject($item, $item['timezone_db']);
+      $start = new DateObject($item, $item['timezone_db']);
+      $end   = new DateObject($item, $item['timezone_db']);
     }
 
     // If we don't have an iCal date value, go no further.
@@ -170,28 +178,36 @@ class date_ical_plugin_row_ical_feed extends views_plugin_row {
 
     module_load_include('inc', 'date_api', 'date_api_ical');
     $item_text = '';
-
+    
     // Create the rendered display using the display settings from the 'iCal' view mode.
     $rendered_array = entity_view($this->entity_type, array($entity), 'ical', $this->language, TRUE);
     $item_text = drupal_render($rendered_array);
-
+    
     $event = array();
-    $event['summary'] = date_ical_escape_text(entity_label($this->entity_type, $entity));
+    $event['summary'] = trim(drupal_html_to_text(entity_label($this->entity_type, $entity)));
     $event['all_day'] = $all_day;
-    $event['start'] = $start->format($all_day ? DATE_FORMAT_ICAL_DATE : DATE_FORMAT_ICAL);
-    $event['end'] = $end->format($all_day ? DATE_FORMAT_ICAL_DATE : DATE_FORMAT_ICAL);
-    $event['description'] = date_ical_escape_text(($item_text));
+    $event['start'] = $start;
+    $event['end'] = $end;
+    $event['description'] = trim(drupal_html_to_text($item_text));
     $uri = entity_uri($this->entity_type, $entity);
     $uri['options']['absolute'] = TRUE;
     $event['url'] = url($uri['path'], $uri['options']);
     $event['uid'] = !empty($entity->date_id) ? $entity->date_id[0] : $event['url'];
     $event['rrule'] = $is_field && array_key_exists('rrule', $item) ? $item['rrule'] : '';
+    
+    // Pull the 'changed' date from the entity, so that subscription clients can tell if the event has been updated.
+    // According to the iCal standard, LAST-MODIFIED must be UTC. Fortunately, Drupal stores timestamps in the DB
+    // DB as UTC, so we just need to specify that UTC be used rather than the server's local timezone.
+    $event['last-modified'] = new DateObject($entity->changed, new DateTimeZone('UTC'));
+    
+    // Allow other modules to alter the structured event object, before it gets converted to an iCal VEVENT.
+    $context = array(
+      'entity' => $entity,
+      'entity_type' => $this->entity_type,
+      'language' => $this->language,
+    );
+    drupal_alter('date_ical_feed_event_render', $event, $this->view, $context);
 
-    return theme($this->theme_functions(),
-      array(
-        'view' => $this->view,
-        'options' => $this->options,
-        'event' => $event
-      ));
+    return $event;
   }
 }

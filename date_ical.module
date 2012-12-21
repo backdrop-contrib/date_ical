@@ -157,9 +157,6 @@ function date_ical_libraries_info() {
   return $libraries;
 }
 
-////////////////////////////////////////////////////////////////////
-// Additions from the Parser iCal module.
-////////////////////////////////////////////////////////////////////
 /**
  * Implementation of hook_ctools_plugin_api().
  */
@@ -208,4 +205,144 @@ function date_ical_feeds_plugins() {
   );
   
   return $info;
+}
+
+
+/**
+ * Implements hook_feeds_processor_targets_alter().
+ *
+ * Adds the "Field Name: Repeat Rule" target to Date Repeat Fields.
+ *
+ * @see FeedsNodeProcessor::getMappingTargets().
+ */
+function date_ical_feeds_processor_targets_alter(&$targets, $entity_type, $bundle_name) {
+  foreach (field_info_instances($entity_type, $bundle_name) as $name => $instance) {
+    $info = field_info_field($name);
+    if (in_array($info['type'], array('date', 'datestamp', 'datetime')) && isset($info['settings']['repeat']) && $info['settings']['repeat']) {
+      $targets[$name . ':rrule'] = array(
+        'name' => t('@name: Repeat Rule', array('@name' => $instance['label'])),
+        'callback' => 'date_ical_feeds_set_rrule',
+        'description' => t('The repeat rule for the @name field.', array('@name' => $instance['label'])),
+        'real_target' => $name,
+      );
+    }
+  }
+}
+
+/**
+ * Callback specified in date_ical_feeds_processor_targets_alter() for RRULEs.
+ *
+ * @param $source
+ *   The FeedsSource object.
+ * @param $entity
+ *   The node that's being built from the iCal element that's being parsed.
+ * @param $target
+ *   The machine name of the field into which this RRULE shall be parsed,
+ *   with ":rrule" appended to the end.
+ * @param $feed_element
+ *   The RRULE string (with optional EXDATEs and RDATEs separated by \n).
+ */
+function date_ical_feeds_set_rrule($source, $entity, $target, $feed_element) {
+  // Add the RRULE value to the field in $entity.
+  list($field_name, $trash) = explode(':', $target, 2);
+  module_load_include('inc', 'date_api', 'date_api_ical');
+  $info = field_info_field($field_name);
+  foreach ($entity->{$field_name} as $lang => $field_array) {
+    // Add the multiple date values that Date Repeat Field uses to represent recurring dates.
+    $values = date_ical_build_repeating_dates($feed_element, NULL, $info, $field_array[0]);
+    foreach ($values as $key => $value) {
+      $entity->{$field_name}[$lang][$key] = $value;
+    }
+  }
+}
+
+/**
+ * 99% copy-pasta from date_repeat_field.module's date_repeat_build_dates() function.
+ * The only change is that we assume COUNT=52 on indefinitely repeating RRULEs, rather than
+ * giving up completely.
+ */
+function date_ical_build_repeating_dates($rrule = NULL, $rrule_values = NULL, $field, $item) {
+
+  module_load_include('inc', 'date_api', 'date_api_ical');
+  $field_name = $field['field_name'];
+
+  if (empty($rrule)) {
+    $rrule = date_api_ical_build_rrule($rrule_values);
+  }
+  elseif (empty($rrule_values)) {
+    $rrule_values = date_ical_parse_rrule(NULL, $rrule);
+  }
+
+  // By the time we get here, the start and end dates have been
+  // adjusted back to UTC, but we want localtime dates to do
+  // things like '+1 Tuesday', so adjust back to localtime.
+  $timezone = date_get_timezone($field['settings']['tz_handling'], $item['timezone']);
+  $timezone_db = date_get_timezone_db($field['settings']['tz_handling']);
+  $start = new DateObject($item['value'], $timezone_db, date_type_format($field['type']));
+  $start->limitGranularity($field['settings']['granularity']);
+  if ($timezone != $timezone_db) {
+    date_timezone_set($start, timezone_open($timezone));
+  }
+  if (!empty($item['value2']) && $item['value2'] != $item['value']) {
+    $end = new DateObject($item['value2'], date_get_timezone_db($field['settings']['tz_handling']), date_type_format($field['type']));
+    $end->limitGranularity($field['settings']['granularity']);
+    date_timezone_set($end, timezone_open($timezone));
+  }
+  else {
+    $end = $start;
+  }
+  $duration = $start->difference($end);
+  $start_datetime = date_format($start, DATE_FORMAT_DATETIME);
+
+  if (!empty($rrule_values['UNTIL']['datetime'])) {
+    $end = date_ical_date($rrule_values['UNTIL'], $timezone);
+    $end_datetime = date_format($end, DATE_FORMAT_DATETIME);
+  }
+  elseif (!empty($rrule_values['COUNT'])) {
+    $end_datetime = NULL;
+  }
+  else {
+    // No UNTIL and no COUNT means this is an indefinitely repeating RRULE, which Date Repeat Field doesn't support.
+    // The best we can do is pretend it has a repeat count of 52 (52 weeks in a year, most repeats are weekly)
+    // by inserting a COUNT=52 param into the string, right after 'RRULE:'.
+    $rrule = substr_replace($rrule, 'COUNT=52;', 6, 0);
+  }
+
+  // Split the RRULE into RRULE, EXDATE, and RDATE parts.
+  $parts = date_repeat_split_rrule($rrule);
+  $parsed_exceptions = (array) $parts[1];
+  $exceptions = array();
+  foreach ($parsed_exceptions as $exception) {
+    $date = date_ical_date($exception, $timezone);
+    $exceptions[] = date_format($date, 'Y-m-d');
+  }
+
+  $parsed_rdates = (array) $parts[2];
+  $additions = array();
+  foreach ($parsed_rdates as $rdate) {
+    $date = date_ical_date($rdate, $timezone);
+    $additions[] = date_format($date, 'Y-m-d');
+  }
+
+  $dates = date_repeat_calc($rrule, $start_datetime, $end_datetime, $exceptions, $timezone, $additions);
+  $value = array();
+  foreach ($dates as $delta => $date) {
+    // date_repeat_calc always returns DATE_DATETIME dates, which is
+    // not necessarily $field['type'] dates.
+    // Convert returned dates back to db timezone before storing.
+    $date_start = new DateObject($date, $timezone, DATE_FORMAT_DATETIME);
+    $date_start->limitGranularity($field['settings']['granularity']);
+    date_timezone_set($date_start, timezone_open($timezone_db));
+    $date_end = clone($date_start);
+    date_modify($date_end, '+' . $duration . ' seconds');
+    $value[$delta] = array(
+      'value' => date_format($date_start, date_type_format($field['type'])),
+      'value2' => date_format($date_end, date_type_format($field['type'])),
+      'offset' => date_offset_get($date_start),
+      'offset2' => date_offset_get($date_end),
+      'timezone' => $timezone,
+      'rrule' => $rrule,
+      );
+  }
+  return $value;
 }

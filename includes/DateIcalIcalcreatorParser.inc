@@ -28,13 +28,21 @@ class DateIcalIcalcreatorParser extends DateIcalFeedsParser {
     ),
     'dtstart' => array(
       'name' => 'Date start',
-      'description' => 'Start time for the feed item. If also using the "Date end" source, this MUST come before it in the mapping, due to the way some iCal feeds are formatted.',
+      'description' => 'Start time for the feed item.
+        If also using the "Date end" source, this MUST come before it in the mapping, due to the way iCal feeds are formatted.',
       'date_ical_parse_handler' => 'formatDateTime',
     ),
     'dtend' => array(
       'name' => 'Date end',
       'description' => 'End time for the feed item.',
       'date_ical_parse_handler' => 'formatDateTime',
+    ),
+    'rrule' => array(
+      'name' => 'Repeat rule',
+      'description' => 'Describes when and how often this calendar component should repeat.
+        The date field for the target node must be configrred to support repeating dates, using the Date Repeat Field module (a submodule of Date).
+        When using this source field, it MUST come after Date start (and Date end, if used) in the mapping.',
+      'date_ical_parse_handler' => 'formatRrule',
     ),
     'uid' => array(
       'name' => 'UID',
@@ -159,12 +167,12 @@ class DateIcalIcalcreatorParser extends DateIcalFeedsParser {
    *
    * @todo is \n \N handling correct?
    */
-  public function formatText($property_key, $property, DateIcalComponentInterface $item, FeedsParserResult $result, FeedsSource $source) {
+  public function formatText($property_key, $property, DateIcalIcalcreatorComponent $item, FeedsParserResult $result, FeedsSource $source) {
     $context = get_defined_vars();
     $text = $property['value'];
     $text = str_replace(array("\\n", "\\N"), "\n", $text);
     
-    // Allow modules to alter the text before it's mapped to the destination.
+    // Allow modules to alter the text before it's mapped to the target.
     drupal_alter('date_ical_feeds_object', $text, $context);
         
     return $text;
@@ -175,14 +183,14 @@ class DateIcalIcalcreatorParser extends DateIcalFeedsParser {
    *
    * @return string.
    */
-  public function formatParamText($property_key, $property, DateIcalComponentInterface $item, DateIcalParserResult $result, FeedsSource $source) {
+  public function formatParamText($property_key, $property, DateIcalIcalcreatorComponent $item, DateIcalParserResult $result, FeedsSource $source) {
     $context = get_defined_vars();
     $position = strpos($property_key, ':');
     $key = substr($property_key, 0, $position);
     $attribute = strtoupper(substr($property_key, ++$position));
     $text = $property['params'][$attribute];
     
-    // Allow modules to alter the param text before it's mapped to the destination.
+    // Allow modules to alter the param text before it's mapped to the target.
     drupal_alter('date_ical_feeds_object', $text, $context);
         
     return $text;
@@ -193,7 +201,7 @@ class DateIcalIcalcreatorParser extends DateIcalFeedsParser {
    *
    * @return FeedsDateTime
    */
-  public function formatDateTime($property_key, $property, DateIcalComponentInterface $item, DateIcalParserResult $result, FeedsSource $source) {
+  public function formatDateTime($property_key, $property, DateIcalIcalcreatorComponent $item, DateIcalParserResult $result, FeedsSource $source) {
     $context = get_defined_vars();
     $date_array = $property['value'];
     
@@ -227,7 +235,7 @@ class DateIcalIcalcreatorParser extends DateIcalFeedsParser {
           $date_array = $start_array;
         }
       }
-      // The order in which the source -> destination mapping is set up matters here: dtstart has to come before dtend.
+      // The order in which the source -> target mapping is set up matters here: dtstart has to come before dtend.
       // This has been noted in the description for this source field.
       if ($property_key == 'dtstart') {
         if ($duration = $item->getProperty('duration')) {
@@ -273,7 +281,7 @@ class DateIcalIcalcreatorParser extends DateIcalFeedsParser {
       }
       
       // If this iCal object has no DTEND, but it does have a DURATION, emulate DTEND as DTSTART + DURATION.
-      // Again, this mechanism requires that dtstart be parsed before dtend in the source->destination mapping.
+      // Again, this mechanism requires that dtstart be parsed before dtend in the source->target mapping.
       if ($property_key == 'dtstart' && !$item->getProperty('dtend') && ($duration = $item->getProperty('duration'))) {
         $end_array = iCalUtilityFunctions::_duration2date($date_array, $duration['value']);
         $item->setProperty('dtend', $end_array);
@@ -282,7 +290,7 @@ class DateIcalIcalcreatorParser extends DateIcalFeedsParser {
       $parsed_datetime = new FeedsDateTime($date_string, $tz);
     }
     
-    // Allow modules to alter the FeedsDateTime object before it's mapped to the destination.
+    // Allow modules to alter the FeedsDateTime object before it's mapped to the target.
     drupal_alter('date_ical_feeds_object', $parsed_datetime, $context);
     
     return $parsed_datetime;
@@ -293,14 +301,49 @@ class DateIcalIcalcreatorParser extends DateIcalFeedsParser {
    *
    * @return array of free tags strings.
    */
-  public function formatCategories($property_key, $property, DateIcalComponentInterface $item, DateIcalParserResult $result, FeedsSource $source) {
+  public function formatCategories($property_key, $property, DateIcalIcalcreatorComponent $item, DateIcalParserResult $result, FeedsSource $source) {
     $context = get_defined_vars();
-    // Allow modules to alter the categories before they're mapped to the destination.
+    // Allow modules to alter the categories before they're mapped to the target.
     drupal_alter('date_ical_feeds_object', $property['value'], $context);
     
     if (!empty($property['value'])) {
       return is_array($property['value']) ? $property['value'] : array($property['value']);
     }
+  }
+  
+  /**
+   * Format RRULEs, which specify when and how often the event is repeated.
+   *
+   * @return An RRULE string, with any EXDATE and RDATE values appended, separated by \n.
+   *   This is to make the RRULE compatible with date_repeat_split_rrule().
+   */
+  public function formatRrule($property_key, $property, DateIcalIcalcreatorComponent $item, DateIcalParserResult $result, FeedsSource $source) {
+    $context = get_defined_vars();
+    // Allow modules to alter the RRULE before it's mapped to the target.
+    drupal_alter('date_ical_feeds_object', $property, $context);
+    $item->setRrule($property);
+    /*
+    // I'm not really sure it makes sense to let users alter these, and since you can have more than one of each,
+    // it's probbaly not worth the effort to program it correctly. But here's my attempts so far, if anyone wants
+    // to finish it.
+    $rdate = $item->getProperty('rdate');
+    if (!empty($rdate)) {
+      $context['property_key'] = 'rdate';
+      drupal_alter('date_ical_feeds_object', $rdate, $context);
+      $item->setRdate($rdate);
+    }
+    $exdate = $item->getProperty('exdate');
+    if (!empty($rdate)) {
+      $context['property_key'] = 'exdate';
+      drupal_alter('date_ical_feeds_object', $exdate, $context);
+      $item->setExdate($exdate);
+    }
+    */
+    
+    $rrule = $item->getRrule();
+    $exdate = $item->getExdate();
+    $rdate = $item->getRdate();
+    return trim("$rrule\n$exdate\n$rdate");
   }
 
   /**
@@ -363,5 +406,32 @@ class DateIcalIcalcreatorComponent implements DateIcalComponentInterface {
     }
     // Call the setProperty() method on $this->component with the arguments: $name + $args.
     call_user_func_array(array($this->component, "setProperty"), array($name) + $args);
+  }
+  
+  // Special set functions, because using component->setRrule() and similar always add an *additional*
+  // RRULE/RDATE/EXDATE, rather than changing the existing one. This may be a bug in iCalcreator, or
+  // I may just be calling the functions wrong.
+  public function setRrule($rrule) {
+    return $this->component->rrule[0] = $rrule;
+  }
+  
+  public function getRrule() {
+    return trim($this->component->createRrule());
+  }
+
+  public function setRdate($rdate) {
+    return $this->component->rdate[0] = $rdate;
+  }
+  
+  public function getRdate() {
+    return trim($this->component->createRdate());
+  }
+  
+  public function setExdate($exdate) {
+    return $this->component->exdate[0] = $exdate;
+  }
+  
+  public function getExdate() {
+    return trim($this->component->createExdate());
   }
 }

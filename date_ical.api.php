@@ -113,8 +113,7 @@ function hook_date_ical_icalcreator_component_alter(&$component, &$context) {
 }
 
 /**
- * Alter an individual feeds object (the source data for a single field)
- * that was parsed from an iCal feed.
+ * Alter the post-parse data for a single field from an iCal feed.
  *
  * @param $value
  *   A string or object representing one parsed property of an iCal component.
@@ -130,6 +129,10 @@ function hook_date_ical_feeds_object_alter(&$value, &$context) {
   // Example of what might be done with this alter hook
   if ($context['property_key'] == 'dtstart') {
     // Tweak the parsed FeedsDateTime object for the start time.
+    // ...
+  }
+}
+object for the start time.
     // ...
   }
 }

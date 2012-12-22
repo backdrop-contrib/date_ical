@@ -59,7 +59,14 @@ abstract class DateIcalFeedsParser extends FeedsParser {
       // and use listed handler to get source output
       $handler = $this::$sources[$property_key]['date_ical_parse_handler'];
       $property = $item->getProperty($key);
-      return $this->$handler($property_key, $property, $item, $result, $source);
+      if (empty($property)) {
+        // $property will be empty if the mapping is set up to parse optional source
+        // components (e.g. RRULE), and this particular VEVENT doesn't have one.
+        return '';
+      }
+      else {
+        return $this->$handler($property_key, $property, $item, $result, $source);
+      }
     }
   }
 }

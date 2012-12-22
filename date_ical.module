@@ -182,7 +182,7 @@ function date_ical_feeds_plugins() {
     ),
   );
   $info['DateIcalIcalcreatorParser'] = array(
-    'name' => 'iCalCreator parser',
+    'name' => 'iCalcreator parser',
     'description' => 'Use iCalcreator to parse iCal feeds.',
     'help' => 'Parse feeds in the iCal format using the iCalcreator library.',
     'handler' => array(
@@ -192,6 +192,8 @@ function date_ical_feeds_plugins() {
       'path' => $path,
     ),
   );
+  /*
+   // Disabled until when (if) it can be updated to provide the same functionality as the iCalcreator parser.
   $info['DateIcalDateModuleParser'] = array(
     'name' => 'Date API iCal parser',
     'description' => 'Use the Date module\'s API to parse iCal feeds.',
@@ -203,6 +205,7 @@ function date_ical_feeds_plugins() {
       'path' => $path,
     ),
   );
+  */
   
   return $info;
 }
@@ -243,6 +246,10 @@ function date_ical_feeds_processor_targets_alter(&$targets, $entity_type, $bundl
  *   The RRULE string (with optional EXDATEs and RDATEs separated by \n).
  */
 function date_ical_feeds_set_rrule($source, $entity, $target, $feed_element) {
+  if (empty($feed_element)) {
+    // Make sure that VEVENTs which have no RRULE aren't given repeating dates.
+    return;
+  }
   // Add the RRULE value to the field in $entity.
   list($field_name, $trash) = explode(':', $target, 2);
   module_load_include('inc', 'date_api', 'date_api_ical');

@@ -129,7 +129,9 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
         if (!empty($row['rrule']) && module_exists('date_repeat')) {
           // Split the rrule into the actual rule, exceptions and additions.
           list($rrule, $exceptions, $additions) = date_repeat_split_rrule($row['rrule']);
-          // Add the rrule itself.
+          // Add the rrule itself. We need to massage the data a bit, since iCalcreator expects RRULEs to be
+          // in a different format than the Date API gives them to us.
+          $rrule = self::convert_rrule_for_icalcreator($rrule);
           $vevent->setRrule($rrule);
           // Process exceptions if there are any.
           if (!empty($exceptions)) {
@@ -239,5 +241,38 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
     }
 
     return $output;
+  }
+  
+  /**
+   * This function converts an rrule array to the iCalcreator format.
+   *
+   * iCalcreator expects the BYDAY element to be an array like this:
+   * (array) ( [([plus] ordwk / minus ordwk)], "DAY" => weekday )
+   *
+   * But the way that the Date API gives it to us is like this:
+   * (array) ( [([plus] ordwk / minus ordwk)]weekday )
+   */
+  public static function convert_rrule_for_icalcreator($rrule) {
+    $new_rrule = array();
+    foreach ($rrule as $key => $value) {
+      if (strtoupper($key) == 'DATA') {
+        // iCalcreator doesn't expect the 'DATA' key that the Date API gives us.
+        continue;
+      }
+      if (strtoupper($key) == 'BYDAY') {
+        $new_byday = array();
+        foreach ($value as $day) {
+          // Fortunately, the weekday values are always 2 characters, so it's easy to
+          // split off the ordwk part, even though it could be 1 or 2 characters.
+          $weekday = substr($day, -2);
+          $ordwk = substr($day, 0, -2);
+          $new_byday[] = array($ordwk, 'DAY' => $weekday);
+        }
+        $value = $new_byday;
+      }
+      
+      $new_rrule[$key] = $value;
+    }
+    return $new_rrule;
   }
 }

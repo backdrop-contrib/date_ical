@@ -10,7 +10,7 @@
  */
 class DateIcalFeedsParserTestCase extends FeedsMapperTestCase {
   public function absolutePath() {
-    return $this->absolute() . '/'. drupal_get_path('module', 'date_ical');
+    return $this->absolute() . '/' . drupal_get_path('module', 'date_ical');
   }
 
   /**

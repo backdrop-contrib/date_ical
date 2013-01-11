@@ -130,7 +130,7 @@ class DateIcalDateModuleParser extends DateIcalFeedsParser {
    * Load the Date API.
    */
   static public function loadLibrary() {
-    include_once(drupal_get_path('module', 'date_api') .'/date_api_ical.inc');
+    include_once(drupal_get_path('module', 'date_api') . '/date_api_ical.inc');
   }
 }
 

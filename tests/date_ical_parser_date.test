@@ -19,19 +19,19 @@ abstract class DateIcalFeedsParserDateTestCase extends DateIcalFeedsParserTestCa
   function testBasic() {
     // Create content type for feed items.
     $fields = array(
-      'pidt_date' => array (
+      'pidt_date' => array(
         'type' => 'date',
         'settings' => array(
           'field[settings][enddate_get]' => 1,
         ),
       ),
-      'pidt_datetime' => array (
+      'pidt_datetime' => array(
         'type' => 'datetime',
         'settings' => array(
           'field[settings][enddate_get]' => 1,
         ),
       ),
-      'pidt_datestamp' => array (
+      'pidt_datestamp' => array(
         'type' => 'datestamp',
         'settings' => array(
           'field[settings][enddate_get]' => 1,
@@ -89,12 +89,12 @@ abstract class DateIcalFeedsParserDateTestCase extends DateIcalFeedsParserTestCa
    */
   public function testTimezones() {
     // set users timezone
-    $this->drupalPost('user/' .$this->admin_user->uid .'/edit', array('timezone' => 'Africa/Bangui'), t('Save'));
+    $this->drupalPost("user/{$this->admin_user->uid}/edit", array('timezone' => 'Africa/Bangui'), t('Save'));
 
     // Create content type for feed items.
     $fields = array(
       // Pacific/Apia
-      'pidt_site' => array (
+      'pidt_site' => array(
         'type' => 'date',
         'settings' => array(
           'field[settings][enddate_get]' => 1,
@@ -102,7 +102,7 @@ abstract class DateIcalFeedsParserDateTestCase extends DateIcalFeedsParserTestCa
         ),
       ),
       // in field
-      'pidt_date' => array (
+      'pidt_date' => array(
         'type' => 'date',
         'settings' => array(
           'field[settings][enddate_get]' => 1,
@@ -110,7 +110,7 @@ abstract class DateIcalFeedsParserDateTestCase extends DateIcalFeedsParserTestCa
         ),
       ),
       // Africa/Bangui (same user entering and viewing)
-      'pidt_user' => array (
+      'pidt_user' => array(
         'type' => 'date',
         'settings' => array(
           'field[settings][enddate_get]' => 1,
@@ -118,7 +118,7 @@ abstract class DateIcalFeedsParserDateTestCase extends DateIcalFeedsParserTestCa
         ),
       ),
       // utc
-      'pidt_utc' => array (
+      'pidt_utc' => array(
         'type' => 'date',
         'settings' => array(
           'field[settings][enddate_get]' => 1,
@@ -126,7 +126,7 @@ abstract class DateIcalFeedsParserDateTestCase extends DateIcalFeedsParserTestCa
         ),
       ),
       // none
-      'pidt_none' => array (
+      'pidt_none' => array(
         'type' => 'date',
         'settings' => array(
           'field[settings][enddate_get]' => 1,

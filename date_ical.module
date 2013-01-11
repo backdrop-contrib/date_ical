@@ -192,20 +192,6 @@ function date_ical_feeds_plugins() {
       'path' => $path,
     ),
   );
-  /*
-   // Disabled until when (if) it can be updated to provide the same functionality as the iCalcreator parser.
-  $info['DateIcalDateModuleParser'] = array(
-    'name' => 'Date API iCal parser',
-    'description' => 'Use the Date module\'s API to parse iCal feeds.',
-    'help' => 'Parse feeds in the iCal format using API provided by the Date module.',
-    'handler' => array(
-      'parent' => 'DateIcalFeedsParser',
-      'class' => 'DateIcalDateModuleParser',
-      'file' => 'DateIcalDateModuleParser.inc',
-      'path' => $path,
-    ),
-  );
-  */
   
   return $info;
 }
@@ -303,6 +289,7 @@ function date_ical_build_repeating_dates($rrule = NULL, $rrule_values = NULL, $f
 
   if (!empty($rrule_values['UNTIL']['datetime'])) {
     $end = date_ical_date($rrule_values['UNTIL'], $timezone);
+    // TODO: BUG HERE. Read import.pdf, probably something to do with RRULEs and DTENDs together.
     $end_datetime = date_format($end, DATE_FORMAT_DATETIME);
   }
   elseif (!empty($rrule_values['COUNT'])) {

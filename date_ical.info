@@ -6,9 +6,11 @@ core = 7.x
 dependencies[] = date_views
 dependencies[] = entity
 dependencies[] = libraries (>=7.x-2.0)
-dependencies[] = feeds
 dependencies[] = date
 dependencies[] = date_api
+
+; Date iCal doesn't actually depend on Feeds, but it's iCal import functionality won't work without it.
+;dependencies[] = feeds
 
 ; Includes
 files[] = includes/date_ical_plugin_row_ical_entity.inc

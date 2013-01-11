@@ -37,8 +37,8 @@ function hook_date_ical_feed_event_render_alter(&$event, $view, &$context) {
 /**
  * Alter an iCal representation of an event.
  *
- * This hook allows you to modify the event that is actually being added to the
- * iCal calendar. If the Date iCal doesn't support an iCal property that you
+ * This hook allows you to modify the event that is being added to the
+ * iCal calendar. If Date iCal doesn't support an iCal property that you
  * need to use, then you can add it to the event in the iCal feed here.
  *
  * @param $vevent
@@ -129,10 +129,6 @@ function hook_date_ical_feeds_object_alter(&$value, &$context) {
   // Example of what might be done with this alter hook
   if ($context['property_key'] == 'dtstart') {
     // Tweak the parsed FeedsDateTime object for the start time.
-    // ...
-  }
-}
-object for the start time.
     // ...
   }
 }

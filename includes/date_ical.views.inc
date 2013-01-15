@@ -15,7 +15,7 @@ function date_ical_views_plugins() {
     'module' => 'date_ical', // This just tells our themes are elsewhere.
     'style' => array(
       'date_ical' => array(
-        'title' => t('Date iCal Feed'),
+        'title' => t('iCal Feed'),
         'help' => t('Generates an iCal VCALENDAR feed from a view.'),
         'handler' => 'date_ical_plugin_style_ical_feed',
         'path' => $includes_path,
@@ -29,7 +29,7 @@ function date_ical_views_plugins() {
     ),
     'row' => array(
       'date_ical' => array(
-        'title' => t('Date iCal Entity'),
+        'title' => t('iCal Entity'),
         'help' => t('Render each entity as an iCal VEVENT item.'),
         'handler' => 'date_ical_plugin_row_ical_entity',
         'path' => $includes_path,

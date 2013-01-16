@@ -89,6 +89,12 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       // Now add the vevents.
       $timezones = array();
       foreach ($rows as $row) {
+        if (empty($row)) {
+          // The row plugin returned NULL for this row, which can happen due to
+          // various error conditions. The only thing we can do is skip it.
+          continue;
+        }
+        
         $vevent = $vcalendar->newComponent('vevent');
         // Get the start date as an array.
         $rendered_date = $row['start']->toArray();

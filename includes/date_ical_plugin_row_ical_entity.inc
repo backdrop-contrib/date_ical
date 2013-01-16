@@ -157,11 +157,14 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
     $delta = isset($row->$delta_field) ? $row->$delta_field : 0;
     if ($is_field) {
       $items = field_get_items($this->entity_type, $entity, $field_name);
+      if (!$items) {
+        // This entity doesn't have the date field that the user configured our
+        // view to use. We can't do anything with it.
+        return;
+      }
       $date_field = $items[$delta];
       $domain = check_plain($_SERVER['SERVER_NAME']);
       $entity->date_id[] = "calendar.$id.$field_name.$delta@$domain";
-      
-      //$entity->date_id[] = 'calendar.' . $id . '.' . $field_name . '.' . $delta;
       
       if (!empty($date_field['value'])) {
         $start = new DateObject($date_field['value'], $date_field['timezone_db']);
@@ -176,11 +179,6 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
     elseif (!$is_field && !empty($date_field)) {
       $start = new DateObject($date_field, $date_field['timezone_db']);
       $end   = new DateObject($date_field, $date_field['timezone_db']);
-    }
-    
-    // If we don't have an iCal date value, go no further.
-    if (empty($start)) {
-      return;
     }
     
     // Set the item date to the proper display timezone.

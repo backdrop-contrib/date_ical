@@ -35,7 +35,8 @@ function theme_date_ical_icon($variables) {
   $url = $variables['url'];
   $variables = array(
     'path' => drupal_get_path('module', 'date_ical') . '/images/ical-feed-icon-34x14.png',
-    'title' => t('Add to calendar'), t('Add to calendar'),
+    'title' => t('Add to my calendar'),
+    'alt' => t('Add to my calendar'),
   );
   if ($image = theme('image', $variables)) {
     return '<a href="' . check_url($url) . '" class="ical-icon" title="ical">' . $image . '</a>';

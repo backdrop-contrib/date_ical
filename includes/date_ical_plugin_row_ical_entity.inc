@@ -149,17 +149,19 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
       $field_name = 'revision_timestamp';
     }
     
-    // Identify the field value that matched our query.
-    $date_field = $entity->$field_name;
-    
+    // Pull the date value from the specified field of the entity.
     $entity->date_id = array();
     $start = NULL;
     $end   = NULL;
     $lang = $entity->language;
     $delta = isset($row->$delta_field) ? $row->$delta_field : 0;
     if ($is_field) {
-      $date_field = array_key_exists($lang, $date_field) ? $date_field[$lang][$delta] : $date_field['und'][$delta];
-      $entity->date_id[] = 'calendar.' . $entity->nid . '.' . $field_name . '.' . $delta;
+      $items = field_get_items($this->entity_type, $entity, $field_name);
+      $date_field = $items[$delta];
+      $domain = check_plain($_SERVER['SERVER_NAME']);
+      $entity->date_id[] = "calendar.$id.$field_name.$delta@$domain";
+      
+      //$entity->date_id[] = 'calendar.' . $id . '.' . $field_name . '.' . $delta;
       
       if (!empty($date_field['value'])) {
         $start = new DateObject($date_field['value'], $date_field['timezone_db']);
@@ -181,7 +183,7 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
       return;
     }
     
-    // Set the item date to the proper display timezone;
+    // Set the item date to the proper display timezone.
     $start->setTimezone(new dateTimezone($date_field['timezone']));
     $end->setTimezone(new dateTimezone($date_field['timezone']));
     
@@ -208,19 +210,19 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
       $location_field_name = $location_info['real_field_name'];
       
       // Only attempt this is the entity actually has this field.
-      if (isset($entity->$location_field_name)) {
-        $location_field = $entity->$location_field_name;
-        $location_lang = array_key_exists($lang, $location_field) ? $lang : 'und';
+      $items = field_get_items($this->entity_type, $entity, $location_field_name);
+      if ($items) {
+        $location_field = $items[$delta];
         
         if ($location_info['type'] == 'node_reference') {
-          $location_nid = $location_field[$location_lang][$delta]['nid'];
-          if ($location_nid) {
-            $node = node_load($location_nid);
-            $location = $node->title;
+          // Make sure this Node Reference actually references a node.
+          if ($location_field['nid']) {
+            $node = node_load($location_field['nid']);
+            $location = check_plain($node->title);
           }
         }
         else {
-          $location = $location_field[$location_lang][$delta]['value'];
+          $location = check_plain($location_field['value']);
         }
       }
     }

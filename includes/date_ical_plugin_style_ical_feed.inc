@@ -13,9 +13,6 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
   function _default_calendar_name() {
     $view_title = $this->view->get_title();
     $calendar_name = variable_get('site_name', 'Drupal');
-    if ($slogan = variable_get('site_slogan', '')) {
-      $calendar_name .= ' - ' . $slogan;
-    }
     $calendar_name .= !empty($view_title) ? ': ' . $view_title : '';
     return $calendar_name;
   }
@@ -31,7 +28,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
     $url_options['absolute'] = TRUE;
     $url = url($this->view->get_url(NULL, $path), $url_options);
     if (empty($this->preview)) {
-      $this->view->feed_icon = theme('date_ical_icon', array('url' => $url, 'title' => $title));
+      $this->view->feed_icon .= theme('date_ical_icon', array('url' => $url, 'title' => $title));
       drupal_add_html_head_link(array(
         'rel' => 'alternate',
         'type' => 'application/calendar',
@@ -43,21 +40,21 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
   
   function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
-    $cal_name = $this->_default_calendar_name();
     // Allow users to override the default Calendar name (X-WR-CALNAME).
     $form['cal_name'] = array(
       '#type' => 'textfield',
       '#title' => t('iCal Calendar Name'),
       '#default_value' => $this->options['cal_name'],
-      '#description' => t("By default, the title of this calendar is constructed from the name and slogan of your site,
-        and the title of this view (\"$cal_name\") when imported into an iCal client. You may override that here."),
+      '#description' => t('This will appear as the title of the iCal feed. If ' .
+        'left blank, the View Title will be used. If that is also blank, the site ' .
+        'name will be inserted as the iCal feed title.'),
     );
   }
   
   function render() {
     if (empty($this->row_plugin) || $this->row_plugin->plugin_name != 'date_ical') {
-      debug('views_plugin_style_ical_feed: This style plugin supports only the Date iCal Entity row plugin.');
-      return 'To enable iCal output, this view\'s Format must be configured to Show: Date iCal Entity.';
+      debug('views_plugin_style_ical_feed: This style plugin supports only the iCal Entity row plugin.');
+      return 'To enable iCal output, this view\'s Format must be configured to Show: iCal Entity.';
     }
     $rows = array();
     foreach ($this->view->result as $row_index => $row) {
@@ -70,16 +67,24 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
     $library = libraries_load('iCalcreator');
     if (!empty($library['loaded'])) {
       // Create a vcalendar object using the iCalcreator library.
-      $config = array('unique_id' => 'Drupal iCal API');
+      $config = array('unique_id' => 'Drupal: Date iCal');
       $vcalendar = new vcalendar($config);
       $vcalendar->setMethod('PUBLISH');
       
-      // Use the default calendar name, unless the user has overriden it.
-      $calendar_name = $this->_default_calendar_name();
-      if (!empty($this->options['cal_name'])) {
-        $calendar_name = $this->options['cal_name'];
+      // If the iCal Calendar Name has been set in the Feed Style options, it's used as the
+      // title in the iCal feed. If not, the View Title is used. If that is blank, then the
+      // Site Name is used.
+      $cal_name = $this->options['cal_name'];
+      if (empty($cal_name)) {
+        $view_title = $this->view->get_title();
+        if (!empty($view_title)) {
+          $cal_name = $view_title;
+        }
+        else {
+          $cal_name = variable_get('site_name', 'Drupal');
+        }
       }
-      $vcalendar->setProperty('x-wr-calname', $calendar_name, array('VALUE' => 'TEXT'));
+      $vcalendar->setProperty('x-wr-calname', $cal_name, array('VALUE' => 'TEXT'));
 
       // Now add the vevents.
       $timezones = array();

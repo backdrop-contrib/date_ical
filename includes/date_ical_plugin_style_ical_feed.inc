@@ -250,7 +250,17 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       $GLOBALS['devel_shutdown'] = FALSE;
       drupal_add_http_header('Content-Type', 'application/calendar; charset=utf-8');
     }
-
+    
+    header('Content-type: text/calendar');
+    // For sites with Clean URLs disabled, the "path" value in the view Display
+    // doesn't actually get applied to the URL of the calendar feed. So, we
+    // need to manually instruct browsers to download a .ics file.
+    if (!variable_get('clean_url', FALSE)) {
+      $path_array = explode('/', $this->display->display_options['path']);
+      $filename = array_pop($path_array);
+      header("Content-Disposition: attachment; filename=\"$filename\"");
+    }
+    
     return $output;
   }
   

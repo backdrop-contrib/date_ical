@@ -205,7 +205,6 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
     }
     
     module_load_include('inc', 'date_api', 'date_api_ical');
-    $item_text = '';
     
     // If the user specified a LOCATION field, pull that data from the entity.
     $location = '';
@@ -246,7 +245,7 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
     $uri['options']['absolute'] = TRUE;
     $event['url'] = url($uri['path'], $uri['options']);
     $event['uid'] = !empty($entity->date_id) ? $entity->date_id[0] : $event['url'];
-    $event['rrule'] = $is_field && array_key_exists('rrule', $item) ? $item['rrule'] : '';
+    $event['rrule'] = $is_field && array_key_exists('rrule', $date_field) ? $date_field['rrule'] : '';
     if ($location) {
       $event['location'] = $location;
     }

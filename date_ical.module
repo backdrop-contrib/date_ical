@@ -38,6 +38,9 @@ function theme_date_ical_icon($variables) {
     'title' => t('Add to my calendar'),
     'alt' => t('Add to my calendar'),
   );
+  // Change the scheme to webcal:// so that calendar clients can automatically
+  // subscribe via the iCal link.
+  $url = str_replace('http://', 'webcal://', $url);
   if ($image = theme('image', $variables)) {
     return '<a href="' . check_url($url) . '" class="ical-icon" title="ical">' . $image . '</a>';
   }

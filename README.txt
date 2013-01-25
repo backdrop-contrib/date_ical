@@ -114,9 +114,11 @@ The Feeds plugin was originally written by ekes, for the "iCal feed parser"
 module (http://www.drupal.org/project/parser_ical). It was modified and 
 improved for Date iCal by coredumperror.
 
-At this time, Date iCal supports outputting iCal calendars only for groups of
-events. To put an "Add to calendar" button on individual event nodes, try the 
-<a href="http://drupal.org/project/addtocal">Add to Cal</a> module.
+At this time, Date iCal supports outputting iCal calendars only through Views.
+To put an "Add to calendar" button on individual event nodes, try the 
+<a href="http://drupal.org/project/addtocal">Add to Cal</a> module, or follow
+the instructions created by the estimable nmc at:
+http://nmc-codes.blogspot.ca/2012/11/creating-ical-feed-for-single-node-in.html
 
 Developers who wish to implement more powerful manipulation of event data can
 read the date_ical.api.php file to learn about the various alter hooks that 

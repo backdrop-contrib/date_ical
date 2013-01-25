@@ -68,7 +68,7 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
     // Build the select dropdown for the text/node_reference field that the user
     // wants to use to (optionally) populate the LOCATION.
     $location_fields = date_ical_get_location_fields($this->base_table);
-    $location_options = array('none' => '- None -');
+    $location_options = array('none' => t('- None -'));
     foreach ($location_fields['name'] as $item => $value) {
       $location_options[$item] = $value['label'];
     }

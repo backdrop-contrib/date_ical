@@ -3,6 +3,7 @@ description = Allows creation of iCal feeds using Views, and provides a Feeds pl
 package = Date/Time
 php = 5.3
 core = 7.x
+dependencies[] = views (>=7.x-3.5)
 dependencies[] = date_views
 dependencies[] = entity
 dependencies[] = libraries (>=7.x-2.0)

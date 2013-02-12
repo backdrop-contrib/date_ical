@@ -22,6 +22,12 @@ To install the iCalcreator library, download it from
 http://kigkonsult.se/downloads/index.php#iCalcreator and extract the zip file.
 Inside that file you'll find iCalcreator.class.php. Copy that file to a folder 
 in your Drupal site named "sites/all/libraries/iCalcreator".
+Then clear the cache on your site, by using either "drush cc all"
+or logging in to your site and going to Configuration -> Development -> 
+Performance and click the "Clear all caches" button. This is necessary because
+libraries are cached, and you may see confusing behavior from Date iCal if the
+iCalcreator library gets cached at a bad time.
+
 
 To confirm that iCalcreator is installed correctly, log in to your Drupal site
 and navigate to the admin/reports/status page. If the row titled "Date iCal" is

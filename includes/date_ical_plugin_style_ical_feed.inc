@@ -28,11 +28,10 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
     // If the user didn't disable the option, change the scheme to webcal:// so
     // that calendar clients can automatically subscribe via the iCal link.
     if (!$this->_get_option('disable_webcal')) {
-      $url = str_replace('http://', 'webcal://', $url);
+      $url = str_replace(array('http://', 'https://'), 'webcal://', $url);
     }
     
-    // Only render the feed icon and header tag if this isn't a Preview on the
-    // View config page.
+    // Render the feed icon and header tag (except during a View Preview).
     if (empty($this->view->live_preview)) {
       $tooltip = t('Add to My Calendar');
       $this->view->feed_icon .= theme('date_ical_icon', array('url' => check_url($url), 'tooltip' => $tooltip));

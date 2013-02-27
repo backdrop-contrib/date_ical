@@ -57,10 +57,10 @@ function date_ical_preprocess_node(&$variables) {
     $variables['page'] = TRUE;
     $variables['title_prefix'] = '';
     $variables['title_suffix'] = '';
-
+    
     // We don't want to see the author information in our feed.
     $variables['display_submitted'] = FALSE;
-
+    
     // Comments and links don't belong in an iCal feed.
     if (isset($variables['content']['comments'])) {
       unset($variables['content']['comments']);
@@ -107,7 +107,7 @@ function date_ical_libraries_info() {
       'php' => array('iCalcreator.class.php'),
     ),
   );
-
+  
   return $libraries;
 }
 
@@ -209,17 +209,16 @@ function date_ical_feeds_set_rrule($source, $entity, $target, $feed_element) {
  * giving up completely.
  */
 function date_ical_build_repeating_dates($rrule = NULL, $rrule_values = NULL, $field, $item) {
-
   module_load_include('inc', 'date_api', 'date_api_ical');
   $field_name = $field['field_name'];
-
+  
   if (empty($rrule)) {
     $rrule = date_api_ical_build_rrule($rrule_values);
   }
   elseif (empty($rrule_values)) {
     $rrule_values = date_ical_parse_rrule(NULL, $rrule);
   }
-
+  
   // By the time we get here, the start and end dates have been
   // adjusted back to UTC, but we want localtime dates to do
   // things like '+1 Tuesday', so adjust back to localtime.
@@ -240,7 +239,7 @@ function date_ical_build_repeating_dates($rrule = NULL, $rrule_values = NULL, $f
   }
   $duration = $start->difference($end);
   $start_datetime = date_format($start, DATE_FORMAT_DATETIME);
-
+  
   if (!empty($rrule_values['UNTIL']['datetime'])) {
     $end = date_ical_date($rrule_values['UNTIL'], $timezone);
     $end_datetime = date_format($end, DATE_FORMAT_DATETIME);
@@ -255,7 +254,7 @@ function date_ical_build_repeating_dates($rrule = NULL, $rrule_values = NULL, $f
     $rrule = substr_replace($rrule, 'COUNT=52;', 6, 0);
     $end_datetime = NULL;
   }
-
+  
   // Split the RRULE into RRULE, EXDATE, and RDATE parts.
   $parts = date_repeat_split_rrule($rrule);
   $parsed_exceptions = (array) $parts[1];
@@ -264,14 +263,14 @@ function date_ical_build_repeating_dates($rrule = NULL, $rrule_values = NULL, $f
     $date = date_ical_date($exception, $timezone);
     $exceptions[] = date_format($date, 'Y-m-d');
   }
-
+  
   $parsed_rdates = (array) $parts[2];
   $additions = array();
   foreach ($parsed_rdates as $rdate) {
     $date = date_ical_date($rdate, $timezone);
     $additions[] = date_format($date, 'Y-m-d');
   }
-
+  
   $dates = date_repeat_calc($rrule, $start_datetime, $end_datetime, $exceptions, $timezone, $additions);
   $value = array();
   foreach ($dates as $delta => $date) {
@@ -301,7 +300,7 @@ function date_ical_build_repeating_dates($rrule = NULL, $rrule_values = NULL, $f
 function date_ical_get_location_fields($base = 'node', $reset = FALSE) {
   static $fields = array();
   $empty = array('name' => array(), 'alias' => array());
-
+  
   if (empty($fields[$base]) || $reset) {
     $cid = 'date_ical_location_fields_' . $base;
     if (!$reset && $cached = cache_get($cid, 'cache_views')) {

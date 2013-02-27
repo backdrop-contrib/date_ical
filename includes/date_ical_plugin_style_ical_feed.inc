@@ -84,7 +84,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       $rows[] = $this->row_plugin->render($row);
     }
     unset($this->view->row_index);
-
+    
     // Try to load the iCalcreator library, and check if that worked.
     $library = libraries_load('iCalcreator');
     if (!empty($library['loaded'])) {
@@ -110,7 +110,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       if (!$this->_get_option('no_calname')) {
         $vcalendar->setProperty('x-wr-calname', $cal_name, array('VALUE' => 'TEXT'));
       }
-
+      
       // Now add the VEVENTs.
       $timezones = array();
       foreach ($rows as $row) {
@@ -141,10 +141,10 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
             $start['second'],
             $timezone);
         }
-
+        
         // Add the Timezone info to the start date, for use later.
         $start['tz'] = $row['start']->getTimezone();
-
+        
         // Only add the end date if there is one.
         if (!empty($row['end'])) {
           $end = $row['end']->toArray();
@@ -170,7 +170,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
         }
         $vevent->setProperty('uid', $row['uid']);
         $vevent->setProperty('summary', $row['summary']);
-
+        
         // Handle repeating dates from the date_repeat module.
         if (!empty($row['rrule']) && module_exists('date_repeat')) {
           // Split the rrule into the actual rule, exceptions and additions.
@@ -207,7 +207,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
               $add = date_ical_date($addition, 'UTC');
               date_timezone_set($add, $start['tz']);
               $addition_array = $add->toArray();
-
+              
               $add_date = array(
                 'year' =>  $addition_array['year'],
                 'month' => $addition_array['month'],
@@ -232,7 +232,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
                   'tz' =>     $end['tz']->getName(),
                 );
               }
-
+              
               $add_dates[] = $add_date;
             }
             // Add the additions as 'RDATE's.
@@ -264,15 +264,15 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
         // Allow other modules to alter the VEVENT object.
         drupal_alter('date_ical_feed_ical_vevent_render', $vevent, $this->view, $row);
       }
-
+      
       // Now add all the timezones we just used to the calendar.
       foreach ($timezones as $timezone) {
         iCalUtilityFunctions::createTimezone($vcalendar, $timezone);
       }
-
+      
       // Allow other modules to alter the calendar as a whole.
       drupal_alter('date_ical_feed_ical_vcalendar_render', $vcalendar, $this->view);
-
+      
       $output = $vcalendar->createCalendar();
     }
     else {
@@ -327,7 +327,6 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
         }
         $value = $new_byday;
       }
-      
       $new_rrule[$key] = $value;
     }
     return $new_rrule;

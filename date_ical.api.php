@@ -148,7 +148,7 @@ function hook_date_ical_icalcreator_component_alter(&$component, &$context) {
 function hook_date_ical_feeds_object_alter(&$value, &$context) {
   // Example of what might be done with this alter hook
   if ($context['property_key'] == 'dtstart') {
-    // Tweak the parsed FeedsDateTime object for the start time.
+    // Tweak the parsed FeedsDateTime object created from the start time.
     // ...
   }
 }

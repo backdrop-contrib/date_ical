@@ -370,7 +370,7 @@ class DateIcalIcalcreatorParser extends DateIcalFeedsParser {
  * A wrapper on iCalcreator component class.
  */
 class DateIcalIcalcreatorComponent implements DateIcalComponentInterface {
-  protected $component;
+  public $component;
   private $_serialized_component;
   
   /**

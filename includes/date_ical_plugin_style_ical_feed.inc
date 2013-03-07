@@ -316,6 +316,10 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
         // iCalcreator doesn't expect the 'DATA' key that the Date API gives us.
         continue;
       }
+      if (strtoupper($key) == 'UNTIL') {
+        // iCalcreator expects the 'timestamp' to be array key for UNTIL
+        $value['timestamp'] = strtotime($value['datetime']);
+      }
       if (strtoupper($key) == 'BYDAY') {
         $new_byday = array();
         foreach ($value as $day) {

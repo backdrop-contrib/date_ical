@@ -92,7 +92,7 @@ class DateIcalIcalcreatorParser extends DateIcalFeedsParser {
     );
     $calendar = new vcalendar($config);
     if (!$calendar->parse($fetcher_result->getRaw())) {
-      throw new DateIcalParseException(t('Error parsing %source iCal file %file', array('%source' => 'todo', '%file' => $filename)));
+      throw new DateIcalParseException(t('Error parsing iCal file: %file', array('%file' => $filename)));
     }
     
     // Allow modules to alter the vcalendar object before we interpret its properties.

@@ -66,6 +66,23 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
     );
     
     // Build the select dropdown for the text/node_reference field that the user
+    // wants to use to (optionally) populate the SUMMARY.
+    $summary_fields = date_ical_get_summary_fields($this->base_table);
+    $summary_options = array('default_title' => t('- Default Title -'));
+    foreach ($summary_fields['name'] as $item => $value) {
+      $summary_options[$item] = $value['label'];
+    }
+    $form['summary_field'] = array(
+      '#type' => 'select',
+      '#title' => t('SUMMARY field'),
+      '#options' => $summary_options,
+      '#default_value' => $this->options['summary_field'],
+      '#description' => t('You may optionally change the SUMMARY component for each event in the iCal output.
+        Choose which text, taxonomy term reference or Node Reference field you would like to be output as the SUMMARY.
+        If using a Node Reference, the Title of the referenced node will be used.'),
+    );
+
+    // Build the select dropdown for the text/node_reference field that the user
     // wants to use to (optionally) populate the LOCATION.
     $location_fields = date_ical_get_location_fields($this->base_table);
     $location_options = array('none' => t('- None -'));
@@ -239,7 +256,38 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
       'description' => drupal_render($rendered_array),
       'summary' => entity_label($this->entity_type, $entity)
     );
-    
+    if (!empty($this->options['summary_field']) && $this->options['summary_field'] != 'default_title') {
+      $summary_fields = date_ical_get_summary_fields();
+      $summary_info = $summary_fields['name'][$this->options['summary_field']];
+      $summary_field_name = $summary_info['real_field_name'];
+      // Only attempt this is the entity actually has this field.
+      $items = field_get_items($this->entity_type, $entity, $summary_field_name);
+      $summary = '';
+      if ($items) {
+        $summary_field = $items[$delta];
+        if ($summary_info['type'] == 'node_reference') {
+          // Make sure this Node Reference actually references a node.
+          if ($summary_field['nid']) {
+            $node = node_load($summary_field['nid']);
+            $summary = check_plain($node->title);
+          }
+        }
+        elseif ($summary_info['type'] == 'taxonomy_term_reference') {
+          $terms = taxonomy_term_load_multiple($items);
+          // Make sure that there are terms that were loaded
+          if ($terms) {
+            foreach ($terms as $term) {
+              $summary .= check_plain($term->name) . ', ';
+            }
+          }
+          $summary = trim($summary);
+        }
+        else {
+          $summary = check_plain($summary_field['value']);
+        }
+      $data['summary'] = ($summary)? $summary : $data['summary'];
+      }
+    }
     // Allow other modules to alter the HTML of the Summary and Description,
     // before it gets converted to iCal-compliant plaintext. This allows users
     // to set up a newline between fields, for instance.
@@ -265,6 +313,11 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
       $event['location'] = $location;
     }
     
+    // If we are using a repeat rule (and not just multi-day events)
+    // we remove the item from the entities.
+    if ($event['rrule']) {
+      $this->entities[$id] = NULL;
+    }
     // Pull the 'changed' date from the entity, so that subscription clients can tell if the event has been updated.
     // According to the iCal standard, LAST-MODIFIED must be UTC. Fortunately, Drupal stores timestamps in the DB
     // as UTC, so we just need to specify that UTC be used rather than the server's local timezone.

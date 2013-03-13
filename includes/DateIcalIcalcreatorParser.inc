@@ -218,7 +218,6 @@ class DateIcalIcalcreatorParser extends DateIcalFeedsParser {
        * FeedsDateTime sets the granularity correctly.
        * However the granularity is not used yet.
        * All Day events handling is not finalized at the time of writing.
-       * Multi-day All Day events are not handled at this time.
        * http://drupal.org/node/874322 To Date & All Day Date Handling
        */
       if ($property_key == 'dtend') {
@@ -236,6 +235,12 @@ class DateIcalIcalcreatorParser extends DateIcalFeedsParser {
             && module_exists('date_all_day')) {
           return;
         }
+        elseif (module_exists('date_all_day')) {
+          // When we add the time of 00:00:00 to our date explicitly
+          // the date that gets parsed for DTEND is 1 day ahead.
+          // so taking a day away before that (if date_all_day is found)
+          $date_array['day'] -= 1;
+        }
       }
       // The order in which the source -> target mapping is set up matters here: dtstart has to come before dtend.
       // This has been noted in the description for this source field.
@@ -252,7 +257,6 @@ class DateIcalIcalcreatorParser extends DateIcalFeedsParser {
           $item->setProperty('dtend', $end_array);
         }
       }
-      
       // FeedsDateTime's implementation of setTimezone() assumes that dates with no time element should just ignore
       // timezone changes, so I had to add the 00:00:00 explicitly, even though it shouldn't be necessary.
       $date_string = sprintf('%d-%d-%d 00:00:00', $date_array['year'], $date_array['month'], $date_array['day']);

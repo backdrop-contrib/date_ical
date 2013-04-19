@@ -84,7 +84,7 @@ function date_ical_entity_info_alter(&$entity_info) {
     $entity_info[$entity_type]['view modes'] += array(
       'ical' => array(
         'label' => t('iCal'),
-        'custom settings' => TRUE,
+        'custom settings' => FALSE,
       ),
     );
   }

@@ -227,7 +227,7 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
     // If the user specified a LOCATION field, pull that data from the entity.
     $location = '';
     if (!empty($this->options['location_field']) && $this->options['location_field'] != 'none') {
-      $location_fields = date_ical_get_location_fields();
+      $location_fields = date_ical_get_location_fields($this->base_table);
       $location_info = $location_fields['name'][$this->options['location_field']];
       $location_field_name = $location_info['real_field_name'];
       

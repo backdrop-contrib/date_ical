@@ -177,7 +177,6 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
     $entity->date_id = array();
     $start = NULL;
     $end   = NULL;
-    $lang = $entity->language;
     $delta = isset($row->$delta_field) ? $row->$delta_field : 0;
     if ($is_field) {
       $items = field_get_items($this->entity_type, $entity, $field_name);

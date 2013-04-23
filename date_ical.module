@@ -172,6 +172,34 @@ function date_ical_feeds_processor_targets_alter(&$targets, $entity_type, $bundl
 }
 
 /**
+ * Reformats the provided text to be compliant with the iCal spec.
+ * If the text contains HTML tags, those tags will be stripped
+ * (with <p> tags converted to \n\n), and uneeded whitespace
+ * will be cleaned up.
+ *
+ * @param $text
+ *   The text to be reformatted.
+ */
+function date_ical_format_text($text = '') {
+  # NOTE TO DEVS:
+  # This doesn't quite go all the way toward true iCal compliance. 
+  # Getting that right is *hard* (see issues #61830, #84740), so
+  # I'm going to just half-ass it for now.
+  $text = trim(drupal_html_to_text($text));
+  $text = str_replace('"', '\"', $text);
+  $text = str_replace(",", "\,", $text);
+  $text = str_replace(";", "\;", $text);
+  $text = str_replace(":", "\:", $text);
+  $text = preg_replace("/  +/", " ", $text);
+  # I'm pretty sure we need to do these for full compliance, but they're pretty screwy.
+  # This is also related to the whole 75-char per line and /r/n linebreak issue.
+  #$text = preg_replace("/\\/", "\\\\", $text);
+  #$text = preg_replace("/\n\n+/", "\\n\\n", $text);
+  $text = str_replace("\n", " \r\n ", $text);
+  return $text;
+}
+
+/**
  * Callback specified in date_ical_feeds_processor_targets_alter() for RRULEs.
  *
  * @param $source

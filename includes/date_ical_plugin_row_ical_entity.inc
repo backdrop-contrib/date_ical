@@ -306,8 +306,8 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
     drupal_alter('date_ical_html', $data, $this->view, $context);
     
     $event = array();
-    $event['summary'] = trim(drupal_html_to_text($data['summary']));
-    $event['description'] = trim(drupal_html_to_text($data['description']));
+    $event['summary'] = date_ical_format_text($data['summary']);
+    $event['description'] = date_ical_format_text($data['description']);
     $event['all_day'] = $all_day;
     $event['start'] = $start;
     $event['end'] = $end;

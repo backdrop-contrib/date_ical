@@ -235,13 +235,21 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
       $items = field_get_items($this->entity_type, $entity, $location_field_name);
       if ($items) {
         $location_field = $items[$delta];
-        
         if ($location_info['type'] == 'node_reference') {
           // Make sure this Node Reference actually references a node.
           if ($location_field['nid']) {
             $node = node_load($location_field['nid']);
             $location = check_plain($node->title);
           }
+        }
+        elseif ($location_info['type'] == 'addressfield') {
+          $locations = array();
+          foreach($location_field as $key => $loc) {
+            if ($loc && !in_array($key, array('first_name', 'last_name'))) {
+              $locations[] = $loc;
+            }
+          }
+          $location = implode(', ', array_reverse($locations));
         }
         else {
           $location = check_plain($location_field['value']);

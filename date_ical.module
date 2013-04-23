@@ -345,7 +345,7 @@ function _date_ical_get_location_fields($base = 'node') {
     // Skip unsupported field types and fields that weren't defined through
     // the Field module.
     $info = field_info_field($field_name);
-    if (!$info || !in_array($info['type'], array('text', 'node_reference'))) {
+    if (!$info || !in_array($info['type'], array('text', 'node_reference', 'addressfield'))) {
       continue;
     }
     

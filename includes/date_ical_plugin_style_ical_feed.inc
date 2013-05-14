@@ -44,6 +44,14 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
     }
   }
   
+  function option_definition() {
+    $options = parent::option_definition();
+    $options['cal_name'] = array('default' => array());
+    $options['no_calname'] = array('default' => array());
+    $options['disable_webcal'] = array('default' => array());
+    return $options;
+  }
+  
   function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
     // Allow users to override the default Calendar name (X-WR-CALNAME).

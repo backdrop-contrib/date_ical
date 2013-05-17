@@ -32,6 +32,9 @@ function date_ical_theme($existing, $type, $theme, $path) {
  * The theme for the ical icon.
  */
 function theme_date_ical_icon($variables) {
+  if (empty($variables['tooltip'])) {
+    $variables['tooltip'] = t('Add this event to my calendar');
+  }
   $variables['path'] = drupal_get_path('module', 'date_ical') . '/images/ical-feed-icon-34x14.png';
   $variables['alt'] = $variables['title'] = $variables['tooltip'];
   if ($image = theme('image', $variables)) {
@@ -182,7 +185,7 @@ function date_ical_feeds_processor_targets_alter(&$targets, $entity_type, $bundl
  */
 function date_ical_format_text($text = '') {
   # NOTE TO DEVS:
-  # This doesn't quite go all the way toward true iCal compliance. 
+  # This doesn't quite go all the way toward true iCal compliance.
   # Getting that right is *hard* (see issues #61830, #84740), so
   # I'm going to just half-ass it for now.
   $text = trim(drupal_html_to_text($text));

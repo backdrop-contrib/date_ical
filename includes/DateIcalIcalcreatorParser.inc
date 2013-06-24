@@ -85,7 +85,7 @@ class DateIcalIcalcreatorParser extends DateIcalFeedsParser {
     // Create the calendar object and parse the feed.
     $calendar = new vcalendar();
     if (!$calendar->parse($ical_feed_contents)) {
-      $url = $source_config[$source->importer->config['fetcher']['plugin_key']]['source'];
+      $url = $source->config[$source->importer->config['fetcher']['plugin_key']]['source'];
       throw new DateIcalParseException(t('Error parsing iCal feed: %url', array('%url' => $url)));
     }
     

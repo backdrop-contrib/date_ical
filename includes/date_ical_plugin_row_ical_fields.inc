@@ -28,7 +28,8 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     $date_field_labels = $this->get_date_field_candidates($all_field_labels);
     $date_field_label_options = array_merge($blank_label, $date_field_labels);
     // Only offer non-date fields for the textual components.
-    $text_field_label_options = array_merge($blank_label, array_diff_key($all_field_labels, $date_field_labels));
+    //$text_field_label_options = array_merge($blank_label, array_diff_key($all_field_labels, $date_field_labels));
+    $text_field_label_options = array_merge($blank_label, $all_field_labels);
     
     $form['instructions'] = array(
       // The surrounding <div> is necessary to ensure that the settings dialog expands to show everything.
@@ -196,18 +197,12 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       $is_date_field = TRUE;
       $date_field = $date_field_value[$delta];
 
-      if (!empty($date_field['value'])) {
-        $start = new DateObject($date_field['value'], $date_field['timezone_db']);
-        if (array_key_exists('value2', $date_field)) {
-          $end = new DateObject($date_field['value2'], $date_field['timezone_db']);
-        }
-        else {
-          $end = clone $start;
-        }
+      $start = new DateObject($date_field['value'], $date_field['timezone_db']);
+      if (array_key_exists('value2', $date_field)) {
+        $end = new DateObject($date_field['value2'], $date_field['timezone_db']);
       }
       else {
-        $title = $this->view->style_plugin->get_field($row_index, $this->options['title_field']);
-        throw new BlankDateFieldException("The row '$title' has a blank date. An iCal entry cannot be created for it.");
+        $end = clone $start;
       }
       
       if (isset($date_field['rrule'])) {
@@ -220,8 +215,8 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       $end   = new DateObject($date_field_value, 'UTC');
     }
     else {
-      // $date_field_value is in an unknown format.
-      throw new InvalidDateFieldException("views_plugin_row_ical_fields: The field [{$this->options['date_field']}] is not a known date-style field. Please choose a datetime or timestamp field in the settings.");
+      $title = strip_tags($this->view->style_plugin->get_field($row_index, $this->options['title_field']));
+      throw new BlankDateFieldException("The row '$title' has a blank date. An iCal entry cannot be created for it.");
     }
 
     // Set the display timezone to whichever tz is stored for this field.
@@ -276,7 +271,8 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     foreach ($view_fields as $alias => $label) {
       $handler = $handlers[$alias];
       if (get_class($handler) == 'views_handler_field_date'
-          || (get_class($handler) == 'views_handler_field_field' && $handler->field_info['type'] == 'datetime')) {
+        || (get_class($handler) == 'views_handler_field_field' &&
+          in_array($handler->field_info['type'], array('datetime', 'date', 'datestamp')))) {
         $field_candidates[$alias] = $label;
       }
     }

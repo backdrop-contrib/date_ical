@@ -8,11 +8,6 @@
  */
 
 /**
- * Exception for when a field which isn't a date field is used by the ical_fields row plugin.
- */
-class InvalidDateFieldException extends Exception { }
-
-/**
  * Exception for when a the date field for a row in the ical_fields row plugin is blank.
  */
 class BlankDateFieldException extends Exception { }

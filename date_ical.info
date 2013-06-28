@@ -15,6 +15,7 @@ dependencies[] = date_api
 
 ; Includes
 files[] = includes/date_ical_plugin_row_ical_entity.inc
+files[] = includes/date_ical_plugin_row_ical_fields.inc
 files[] = includes/date_ical_plugin_style_ical_feed.inc
 files[] = includes/DateIcalFeedParser.inc
 files[] = includes/DateIcalIcalcreatorParser.inc

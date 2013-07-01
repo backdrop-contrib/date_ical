@@ -8,7 +8,7 @@
  */
 
 /**
- * Exception for when a the date field for a row in the ical_fields row plugin is blank.
+ * Exception for when the date field for a row in the ical_fields row plugin is blank.
  */
 class BlankDateFieldException extends Exception { }
 

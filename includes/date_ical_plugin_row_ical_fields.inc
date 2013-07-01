@@ -27,8 +27,6 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     $all_field_labels = $this->display->handler->get_field_labels();
     $date_field_labels = $this->get_date_field_candidates($all_field_labels);
     $date_field_label_options = array_merge($blank_label, $date_field_labels);
-    // Only offer non-date fields for the textual components.
-    //$text_field_label_options = array_merge($blank_label, array_diff_key($all_field_labels, $date_field_labels));
     $text_field_label_options = array_merge($blank_label, $all_field_labels);
     
     $form['instructions'] = array(
@@ -36,7 +34,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       '#prefix' => '<div style="font-size: 90%">',
       '#suffix' => '</div>',
       '#markup' => t("Before applying these settings, this view will need to be configured to load the fields you wish to map into the events in your iCal feed.
-          If you have no fields to choose, you may wish to click the X button in the upper-right to close this dialog."),
+        If you have no fields to choose, you may want to click the X button in the upper-right to close this dialog."),
     );
     $form['date_field'] = array(
       '#type' => 'select',
@@ -52,7 +50,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       '#description' => t('The views field to use as the title for each event (SUMMARY).'),
       '#options' => $text_field_label_options,
       '#default_value' => $this->options['title_field'],
-      '#required' => TRUE,
+      '#required' => FALSE,
     );
     $form['description_field'] = array(
       '#type' => 'select',
@@ -62,7 +60,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
           and set it to the 'iCal' view mode. Then configure the iCal view mode on your event nodes to include the text you want."),
       '#options' => $text_field_label_options,
       '#default_value' => $this->options['description_field'],
-      '#required' => TRUE,
+      '#required' => FALSE,
     );
     $form['location_field'] = array(
       '#type' => 'select',
@@ -82,7 +80,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       '#type' => 'checkbox',
       '#title' => t('Skip blank dates'),
       '#description' => t('Normally, if a view result has a blank date field, the feed will display an error,
-          because it is impossible to create an iCal event with no date. This option makes Views skip those results, instead of erroring.'),
+        because it is impossible to create an iCal event with no date. This option makes Views silently skip those results, instead.'),
       '#default_value' => $this->options['additional_settings']['skip_blank_dates'],
     );
   }
@@ -215,6 +213,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       $end   = new DateObject($date_field_value, 'UTC');
     }
     else {
+      // Handle rows with blank date values.
       $title = strip_tags($this->view->style_plugin->get_field($row_index, $this->options['title_field']));
       throw new BlankDateFieldException("The row '$title' has a blank date. An iCal entry cannot be created for it.");
     }
@@ -257,7 +256,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
 
   /**
    * Filter the list of views fields down to only those which are supported date-type fields.
-   * At this time, the supported date-type fields are datetime fields and timestamps.
+   * At this time, the supported date-type fields are timestamps and the three Date fields.
    *
    * @param array $view_fields
    *   An key=>value array @see views_plugin_display::get_field_labels().
@@ -272,6 +271,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       $handler = $handlers[$alias];
       if (get_class($handler) == 'views_handler_field_date'
         || (get_class($handler) == 'views_handler_field_field' &&
+          // These are Date, Date (ISO format), and Date (Unix timestamp).
           in_array($handler->field_info['type'], array('datetime', 'date', 'datestamp')))) {
         $field_candidates[$alias] = $label;
       }

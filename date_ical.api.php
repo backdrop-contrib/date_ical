@@ -117,7 +117,7 @@ function hook_date_ical_feed_ical_vcalendar_render_alter(&$vcalendar, $view) {
 }
 
 /**
- * Alter the rendered text of an iCal feed before it gets sent to Views.
+ * Alter the final rendered text of an iCal feed before it gets sent to Views.
  *
  * @param $rendered_calendar
  *   The rendered string of iCal text created from an iCalcreator vcalendar object.

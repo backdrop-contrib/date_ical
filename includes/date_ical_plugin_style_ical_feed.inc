@@ -110,7 +110,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
     $library = libraries_load('iCalcreator');
     if (!empty($library['loaded'])) {
       // Create a vcalendar object using the iCalcreator library.
-      $config = array('unique_id' => 'Drupal: Date iCal');
+      $config = array('unique_id' => 'Drupal: Date iCal v' . DATE_ICAL_VERSION);
       $vcalendar = new vcalendar($config);
       $vcalendar->setMethod('PUBLISH');
       
@@ -317,6 +317,9 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
         drupal_add_http_header('Content-Disposition', "attachment; filename=\"$filename\"");
       }
     }
+    
+    // Allow other modules to alter the rendered calendar, just before it gets sent out.
+    drupal_alter('date_ical_post_render', $output, $this->view);
     
     return $output;
   }

@@ -86,12 +86,10 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       debug('views_plugin_style_ical_feed: This style plugin supports only iCal Entity row and iCal Fields plugins.', NULL, TRUE);
       return t('To enable iCal output, this view\'s Format must be configured to Show: iCal Entity or iCal Fields.');
     }
-    if ($this->row_plugin->plugin_name == 'date_ical_fields' && (empty($this->row_plugin->options['date_field'])
-        || empty($this->row_plugin->options['title_field']) || empty($this->row_plugin->options['description_field']))) {
-      // Because these settings are marked as required in the form, this error state will rarely occur. But I ran across it during
+    if ($this->row_plugin->plugin_name == 'date_ical_fields' && empty($this->row_plugin->options['date_field'])) {
+      // Because the Date field is required by the form, this error state will rarely occur. But I ran across it during
       // testing, and the error that resulted was totally non-sensical, so I'm adding this in case it does ever happen.
-      return t("When using the iCal Fields row plugin, the Date, Title, and Description fields are all required.
-        Please set them up using the Settings link under 'Format -> Show: iCal Fields'.");
+      return t("When using the iCal Fields row plugin, the Date field is required. Please set it up using the Settings link under 'Format -> Show: iCal Fields'.");
     }
     $events = array();
     foreach ($this->view->result as $row_index => $row) {

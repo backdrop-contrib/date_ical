@@ -192,7 +192,9 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
         
         // Handle repeating dates from the date_repeat module.
         if (!empty($event['rrule']) && module_exists('date_repeat')) {
-          // Split the rrule into the actual rule, exceptions and additions.
+          // Split the rrule into the actual rule, exceptions, and additions.
+          module_load_include('inc', 'date_api', 'date_api_ical');
+          module_load_include('inc', 'date_repeat', 'date_repeat_calc');
           list($rrule, $exceptions, $additions) = date_repeat_split_rrule($event['rrule']);
           // Add the rrule itself. We need to massage the data a bit, since iCalcreator expects RRULEs to be
           // in a different format than the Date API gives them to us.

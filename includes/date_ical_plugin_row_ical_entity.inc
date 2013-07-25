@@ -291,7 +291,7 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
         else {
           $summary = check_plain($summary_field['value']);
         }
-      $data['summary'] = ($summary)? $summary : $data['summary'];
+      $data['summary'] = $summary ? $summary : $data['summary'];
       }
     }
     // Allow other modules to alter the HTML of the Summary and Description,

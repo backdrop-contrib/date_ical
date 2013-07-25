@@ -275,21 +275,22 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
           // Make sure this Node Reference actually references a node.
           if ($summary_field['nid']) {
             $node = node_load($summary_field['nid']);
-            $summary = check_plain($node->title);
+            $summary = $node->title;
           }
         }
         elseif ($summary_info['type'] == 'taxonomy_term_reference') {
           $terms = taxonomy_term_load_multiple($items);
           // Make sure that there are terms that were loaded
           if ($terms) {
+            $term_names = array();
             foreach ($terms as $term) {
-              $summary .= check_plain($term->name) . ', ';
+              $term_names[] = $term->name;
             }
+            $summary = implode(', ', $term_names);
           }
-          $summary = trim($summary);
         }
         else {
-          $summary = check_plain($summary_field['value']);
+          $summary = trim($summary_field['value']);
         }
       $data['summary'] = $summary ? $summary : $data['summary'];
       }

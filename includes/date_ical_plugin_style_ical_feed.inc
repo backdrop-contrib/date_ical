@@ -295,6 +295,12 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       drupal_alter('date_ical_feed_ical_vcalendar_render', $vcalendar, $this->view);
       
       $output = $vcalendar->createCalendar();
+      // For some unknown reason (overzealous spec comnpliance?), iCalcreator
+      // escapes all commas and semicolons in the strings that it outputs.
+      // This unescapes them, though it does it with a pretty big hammer. This
+      // might be going too far.
+      $output = str_replace('\,', ',', $output);
+      $output = str_replace('\;', ';', $output);
     }
     else {
       // The iCalcreator library isn't available, so we can't output anything.

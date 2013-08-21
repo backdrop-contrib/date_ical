@@ -314,11 +314,15 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
     $uri = entity_uri($this->entity_type, $entity);
     $uri['options']['absolute'] = TRUE;
     $event['url'] = url($uri['path'], $uri['options']);
-    $event['uid'] = !empty($entity->date_id) ? $entity->date_id[0] : $event['url'];
     $event['rrule'] = $is_field && array_key_exists('rrule', $date_field) ? $date_field['rrule'] : '';
     if ($location) {
       $event['location'] = $location;
     }
+    
+    // Generate a unique ID for this event.
+    $domain = check_plain($_SERVER['SERVER_NAME']);
+    $uniqid = uniqid(rand(), true);
+    $event['uid'] = "date_ical.$uniqid@$domain";
     
     // If we are using a repeat rule (and not just multi-day events)
     // we remove the item from the entities.

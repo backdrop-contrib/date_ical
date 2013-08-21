@@ -128,9 +128,10 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     $uri['options']['absolute'] = TRUE;
     $event['url'] = url($uri['path'], $uri['options']);
 
-    // Generate a uid.
+    // Generate a unique ID for this event.
     $domain = check_plain($_SERVER['SERVER_NAME']);
-    $event['uid'] = "calendar." . $row->{$this->view->base_field} . "." . $this->options['date_field'] . "@" . $domain;
+    $uniqid = uniqid(rand(), true);
+    $event['uid'] = "date_ical.$uniqid@$domain";
 
     // Create the primary text fields.
     $text_fields['summary'] = $this->get_field($row_index, $this->options['title_field']);

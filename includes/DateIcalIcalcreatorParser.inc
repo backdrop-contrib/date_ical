@@ -17,56 +17,56 @@ class DateIcalIcalcreatorParser extends DateIcalFeedsParser {
    */
   static protected $sources = array(
     'summary' => array(
-      'name' => 'Summary',
-      'description' => 'A short summary, or title, for the calendar component.',
+      'name' => t('Summary'),
+      'description' => t('A short summary, or title, for the calendar component.'),
       'date_ical_parse_handler' => 'formatText',
     ),
     'description' => array(
-      'name' => 'Description',
-      'description' => 'A more complete description of the calendar component than that provided by the "summary" property.',
+      'name' => t('Description'),
+      'description' => t('A more complete description of the calendar component than that provided by the "summary" property.'),
       'date_ical_parse_handler' => 'formatText',
     ),
     'dtstart' => array(
-      'name' => 'Date start',
-      'description' => 'Start time for the feed item.
-        If also using the "Date end" source, this MUST come before it in the mapping, due to the way iCal feeds are formatted.',
+      'name' => t('Date start'),
+      'description' => t('Start time for the feed item.
+        If also using the "Date end" source, this MUST come before it in the mapping, due to the way iCal feeds are formatted.'),
       'date_ical_parse_handler' => 'formatDateTime',
     ),
     'dtend' => array(
-      'name' => 'Date end',
-      'description' => 'End time for the feed item.',
+      'name' => t('Date end'),
+      'description' => t('End time for the feed item.'),
       'date_ical_parse_handler' => 'formatDateTime',
     ),
     'rrule' => array(
-      'name' => 'Repeat rule',
-      'description' => 'Describes when and how often this calendar component should repeat.
+      'name' => t('Repeat rule'),
+      'description' => ('Describes when and how often this calendar component should repeat.
         The date field for the target node must be configrred to support repeating dates, using the Date Repeat Field module (a submodule of Date).
-        When using this source field, it MUST come after Date start (and Date end, if used) in the mapping.',
+        When using this source field, it MUST come after Date start (and Date end, if used) in the mapping.'),
       'date_ical_parse_handler' => 'formatRrule',
     ),
     'uid' => array(
       'name' => 'UID',
-      'description' => 'UID of feed item',
+      'description' => t('UID of feed item'),
       'date_ical_parse_handler' => 'formatText',
     ),
     'url' => array(
       'name' => 'URL',
-      'description' => 'URL for the feed item.',
+      'description' => t('URL for the feed item.'),
       'date_ical_parse_handler' => 'formatText',
     ),
     'location' => array(
-      'name' => 'Location text',
-      'description' => 'Text of the location property of the feed item.',
+      'name' => t('Location text'),
+      'description' => t('Text of the location property of the feed item.'),
       'date_ical_parse_handler' => 'formatText',
     ),
     'location:altrep' => array(
-      'name' => 'Location alternate representation',
-      'description' => 'Additional location information, usually a URL to a page with more info.',
+      'name' => t('Location alternate representation'),
+      'description' => t('Additional location information, usually a URL to a page with more info.'),
       'date_ical_parse_handler' => 'formatParamText',
     ),
     'categories' => array(
-      'name' => 'Categories',
-      'description' => 'Catagories of the feed item.',
+      'name' => t('Categories'),
+      'description' => t('Catagories of the feed item.'),
       'date_ical_parse_handler' => 'formatCategories',
     ),
   );
@@ -280,8 +280,8 @@ class DateIcalIcalcreatorParser extends DateIcalFeedsParser {
           $tz = new DateTimeZone($date_array['tz']);
         }
         catch (Exception $e) {
-          $source->log('parse', '"%tzid" is not recognized by PHP as a valid timezone, so UTC was used instead. Try implementing hook_date_ical_timezone_alter() in a custom module to fix this problem.',
-            array('%tzid' => $date_array['tz']), WATCHDOG_WARNING);
+          $source->log('parse', t('"%tzid" is not recognized by PHP as a valid timezone, so UTC was used instead. Try implementing hook_date_ical_timezone_alter() in a custom module to fix this problem.',
+            array('%tzid' => $date_array['tz'])), array(), WATCHDOG_WARNING);
           drupal_set_message(t('"%tzid" is not recognized by PHP as a valid timezone, so UTC was used instead. Try implementing hook_date_ical_timezone_alter() in a custom module to fix this problem.',
             array('%tzid' => $date_array['tz'])), 'warning');
         }

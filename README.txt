@@ -6,6 +6,9 @@ events for an iCal feed, as long as that entity contains a Date field. Date
 iCal creates a new iCal "view mode" for all entities, which is used to format
 the Description field of the events in the iCal feed.
 
+For an easier-to-read HTML version of these instructions, please go to 
+http://www.drupal.org/project/date_ical and click the "Read documentation" link
+in the Resources section of the right sidebar.
 
 INSTALLATION
 
@@ -18,11 +21,14 @@ Date iCal has several required dependencies, and an optional one:
 - The Feeds module is optional, but it's needed to enable import of iCal feeds
     from other sites.
 
-To install the iCalcreator library, you can download it from 
-http://kigkonsult.se/downloads/index.php#iCalcreator and extract the zip file,
-or get it from https://github.com/iCalcreator/iCalcreator.
-Inside the zip file you'll find iCalcreator.class.php. Copy that file to a 
-folder in your Drupal site named "sites/all/libraries/iCalcreator".
+To install the iCalcreator library, download it from http://github.com/iCalcreator/iCalcreator
+using either git clone or the "Download Zip" button. Inside you'll find the file
+iCalcreator.class.php. Copy that file to a folder in your Drupal site named
+sites/all/libraries/iCalcreator.
+
+Or, if you have drush, install iCalcreator by running this command from your 
+site's root directory:
+drush make sites/all/modules/date_ical/date_ical.make --no-core
 
 Then clear the cache on your site, by using either "drush cc all"
 or logging in to your site and going to Configuration -> Development -> 

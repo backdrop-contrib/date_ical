@@ -166,7 +166,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
         // Only add the end date if there is one.
         if (!empty($event['end'])) {
           $end = $event['end']->toArray();
-          $timezone = $event['start']->getTimezone()->getName();
+          $timezone = $event['end']->getTimezone()->getName();
           $timezones[$timezone] = $timezone;
           
           if ($event['all_day']) {
@@ -288,7 +288,9 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       
       // Now add all the timezones we just used to the calendar.
       foreach ($timezones as $timezone) {
-        iCalUtilityFunctions::createTimezone($vcalendar, $timezone);
+        if (strtoupper($timezone) != 'UTC') {
+          iCalUtilityFunctions::createTimezone($vcalendar, $timezone);
+        }
       }
       
       // Allow other modules to alter the calendar as a whole.

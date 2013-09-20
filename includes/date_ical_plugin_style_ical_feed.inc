@@ -34,6 +34,10 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
     // Render the feed icon and header tag (except during a View Preview).
     if (empty($this->view->live_preview)) {
       $tooltip = t('Add to My Calendar');
+      if (!isset($this->view->feed_icon)) {
+        // In PHP 5.5, you're no longer allowed to concatinate onto a not-yet-existent property.
+        $this->view->feed_icon = '';
+      }
       $this->view->feed_icon .= theme('date_ical_icon', array('url' => check_url($url), 'tooltip' => $tooltip, 'view' => $this->view));
       drupal_add_html_head_link(array(
         'rel' => 'alternate',

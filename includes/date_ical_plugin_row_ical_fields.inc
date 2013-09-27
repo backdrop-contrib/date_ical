@@ -109,6 +109,8 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       $date = $this->get_row_date($row_index);
     }
     catch (BlankDateFieldException $e) {
+      // Unless the user has specifically said that they want to skip rows which
+      // have blank dates, let this exception percolate.
       if ($this->options['additional_settings']['skip_blank_dates']) {
         return NULL;
       }
@@ -117,7 +119,9 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       }
     }
     
-    $event = array();
+    // Create the event by starting with the date array from this row.
+    $event = $date;
+    
     // Add the LAST-MODIFIED and URL components based on the original entity.
     $entity = $row->_field_data[$this->view->base_field]['entity'];
     $entity_type = $row->_field_data[$this->view->base_field]['entity_type'];
@@ -128,12 +132,30 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     $uri['options']['absolute'] = TRUE;
     $event['url'] = url($uri['path'], $uri['options']);
 
-    // Generate a unique ID for this event.
+    // Generate a unique ID for this event by emulating the way the Date module
+    // creates a Date ID.
+    if (isset($row->{"field_data_{$this->options['date_field']}_delta"})) {
+      $date_field_delta = $row->{"field_data_{$this->options['date_field']}_delta"};
+    }
+    else {
+      // I'm not sure why the "field_data_<field_name>_delta" field is part of
+      // the $row, so it's possible that it will sometimes be missing. If it
+      // is, make an educated guess about the delta by comparing this row's
+      // start date to each of the entity's dates.
+      $date_field_delta = 0;
+      foreach ($entity->{$this->options['date_field']}['und'] as $ndx => $date_array) {
+        if ($date['start']->originalTime == $date_array['value']) {
+          $date_field_delta = $ndx;
+          break;
+        }
+      }
+    }
+    $entity_id = $row->{$this->view->base_field};
+    $date_field_name = $this->options['date_field'];
     $domain = check_plain($_SERVER['SERVER_NAME']);
-    $uniqid = uniqid(rand(), true);
-    $event['uid'] = "date_ical.$uniqid@$domain";
+    $event['uid'] = "calendar.$entity_id.$date_field_name.$date_field_delta@$domain";
 
-    // Create the primary text fields.
+    // Retrieve the rendered text fields.
     $text_fields['summary'] = $this->get_field($row_index, $this->options['title_field']);
     $text_fields['description'] = $this->get_field($row_index, $this->options['description_field']);
     $text_fields['location'] = $this->get_field($row_index, $this->options['location_field']);
@@ -154,9 +176,6 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     $event['summary'] = date_ical_sanitize_text(strip_tags($text_fields['summary']));
     $event['location'] = date_ical_sanitize_text(strip_tags($text_fields['location']));
     $event['description'] = date_ical_sanitize_text($text_fields['description']);
-    
-    // Add the date data.
-    $event = array_merge($event, $date);
     
     // Allow other modules to alter the event object, before it gets passed to
     // the style plugin to be converted into an iCal VEVENT.
@@ -182,14 +201,14 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
    *   The normalized array.
   */
   function get_row_date($row_index) {
-    // Fetch the date field value.
-    $date_field_value = $this->view->style_plugin->get_field_value($row_index, $this->options['date_field']);
-
     $start = NULL;
     $end   = NULL;
     $rrule = NULL;
     $delta = 0;
     $is_date_field = FALSE;
+
+    // Fetch the date field value.
+    $date_field_value = $this->view->style_plugin->get_field_value($row_index, $this->options['date_field']);
 
     // Handle date fields.
     if (isset($date_field_value[$delta]) && is_array($date_field_value[$delta])) {

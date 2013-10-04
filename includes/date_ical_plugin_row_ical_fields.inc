@@ -92,6 +92,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     if (array_key_exists($this->language, $substitutions)) {
       $this->language = $substitutions[$this->language];
     }
+    $this->repeated_dates = array();
   }
   
   /**
@@ -155,6 +156,21 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     $domain = check_plain($_SERVER['SERVER_NAME']);
     $event['uid'] = "calendar.$entity_id.$date_field_name.$date_field_delta@$domain";
 
+    // Because of the way that Date implements repeating dates, we're going to
+    // be given a separate view result for each repeat. We only want to
+    // render a VEVENT (with an RRULE) for the first instance of that date, so
+    // we need to record the entity ID and field name for each result that has
+    // an RRULE, then skip any that we've already seen.
+    if (!empty($date['rrule'])) {
+      $repeat_id = "$entity_id.$date_field_name";
+      if (!isset($this->repeated_dates[$repeat_id])) {
+        $this->repeated_dates[$repeat_id] = $repeat_id;
+      }
+      else {
+        return FALSE;
+      }
+    }
+    
     // Retrieve the rendered text fields.
     $text_fields['summary'] = $this->get_field($row_index, $this->options['title_field']);
     $text_fields['description'] = $this->get_field($row_index, $this->options['description_field']);

@@ -144,13 +144,14 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
     global $base_url;
     $id = $row->{$this->field_alias};
     if (!is_numeric($id)) {
-      return;
+      return NULL;
     }
     
     // Load the specified entity:
     $entity = $this->entities[$id];
     if (empty($entity)) {
-      return;
+      // This can happen when an RRULE is involved.
+      return NULL;
     }
     
     $date_fields = date_views_fields($this->base_table);
@@ -170,7 +171,7 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
     if (!isset($entity->$field_name)) {
       // This entity doesn't have the date property that the user configured
       // our view to use. We can't do anything with it
-      return;
+      return NULL;
     }
     $date_field = $entity->$field_name;
     
@@ -323,11 +324,13 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
     // event page's URL, if the date_id isn't available.
     $event['uid'] = !empty($entity->date_id) ? $entity->date_id[0] : $event['url'];
     
-    // If we are using a repeat rule (and not just multi-day events)
-    // we remove the item from the entities.
+    // If we are using a repeat rule (and not just multi-day events) we
+    // remove the item from the entities list so that its VEVENT won't be
+    // re-created.
     if ($event['rrule']) {
       $this->entities[$id] = NULL;
     }
+    
     // Pull the 'changed' date from the entity, so that subscription clients can tell if the event has been updated.
     // According to the iCal standard, LAST-MODIFIED must be UTC. Fortunately, Drupal stores timestamps in the DB
     // as UTC, so we just need to specify that UTC be used rather than the server's local timezone.

@@ -107,11 +107,15 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
     }
     unset($this->view->row_index);
     
-    // Try to load the iCalcreator library, and check if that worked.
+    // Try to load the iCalcreator library.
     $library = libraries_load('iCalcreator');
-    if (!empty($library['loaded'])) {
+    if (empty($library['loaded'])) {
+      // The iCalcreator library isn't available, so we can't output anything.
+      $output = t('Please install the iCalcreator library to enable iCal output.');
+    }
+    else {
       // Create a vcalendar object using the iCalcreator library.
-      $config = array('unique_id' => 'Drupal: Date iCal v' . DATE_ICAL_VERSION);
+      $config = array('unique_id' => 'Date iCal v' . DATE_ICAL_VERSION);
       $vcalendar = new vcalendar($config);
       $vcalendar->setMethod('PUBLISH');
       
@@ -138,7 +142,8 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       foreach ($events as $event) {
         if (empty($event)) {
           // The row plugin returned NULL for this row, which can happen due to
-          // various error conditions. The only thing we can do is skip it.
+          // either various error conditions, or because an RRULE is involved.
+          // When this happens, just skip it.
           continue;
         }
         
@@ -161,7 +166,8 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
             $start['hour'],
             $start['minute'],
             $start['second'],
-            $timezone);
+            $timezone
+          );
         }
         
         // Add the Timezone info to the start date, for use later.
@@ -185,9 +191,9 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
               $end['hour'],
               $end['minute'],
               $end['second'],
-              $timezone);
+              $timezone
+            );
           }
-          // Keep a copy of the end date, as it's useful later.
           $end['tz'] = $event['end']->getTimezone();
         }
         $vevent->setProperty('uid', $event['uid']);
@@ -195,16 +201,17 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
         
         // Handle repeating dates from the date_repeat module.
         if (!empty($event['rrule']) && module_exists('date_repeat')) {
-          // Split the rrule into the actual rule, exceptions, and additions.
+          // Split the rrule into an RRULE and any additions and exceptions.
           module_load_include('inc', 'date_api', 'date_api_ical');
           module_load_include('inc', 'date_repeat', 'date_repeat_calc');
           list($rrule, $exceptions, $additions) = date_repeat_split_rrule($event['rrule']);
-          // Add the rrule itself. We need to massage the data a bit, since
+          
+          // Add the RRULE itself. We need to massage the data a bit, since
           // iCalcreator expects RRULEs to be in a different format than how
           // Date API gives them to us.
-          $rrule = self::convert_rrule_for_icalcreator($rrule);
-          $vevent->setRrule($rrule);
-          // Process exceptions if there are any.
+          $vevent->setRrule(self::convert_rrule_for_icalcreator($rrule));
+          
+          // Convert any exceptions to EXDATE properties.
           if (!empty($exceptions)) {
             $exdates = array();
             foreach ($exceptions as $exception) {
@@ -215,38 +222,49 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
                 'year' =>  $exception_array['year'],
                 'month' => $exception_array['month'],
                 'day' =>   $exception_array['day'],
-                // Use the time information from the start date.
+                // Use the time information from the start date, since Date
+                // doesn't store time info for EXDATEs.
                 'hour' =>   $start['hour'],
                 'min' =>    $start['minute'],
                 'second' => $start['second'],
                 'tz' =>     $start['tz']->getName(),
               );
             }
-            // Add those exclusions as 'EXDATE's.
-            $vevent->setExdate($exdates);
+            // Add each exclusion as a separate EXDATE property.
+            // The spec supports putting multiple date values into one EXDATE,
+            // but several popular calendar clients (*cough* Apple *cough*)
+            // are bugged, and do not recognize multi-value EXDATEs.
+            foreach ($exdates as $exdate) {
+              $vevent->setExdate(array($exdate));
+            }
           }
-          // Process additions if there are any.
+          
+          // Convert any additions to RDATE properties.
           if (!empty($additions)) {
-            $add_dates = array();
+            $rdates = array();
             foreach ($additions as $addition) {
               $add = date_ical_date($addition, 'UTC');
               date_timezone_set($add, $start['tz']);
               $addition_array = $add->toArray();
               
-              $add_date = array(
+              $rdate = array(
                 'year' =>  $addition_array['year'],
                 'month' => $addition_array['month'],
                 'day' =>   $addition_array['day'],
-                // Use the time information from the start date.
+                // Use the time information from the start date, since Date
+                // doesn't store time info for RDATEs.
                 'hour' =>   $start['hour'],
                 'min' =>    $start['minute'],
                 'second' => $start['second'],
                 'tz' =>     $start['tz']->getName(),
               );
-              // If there was an end date specified, use that too.
-              if (!empty($event['end'])) {
-                $add_date = array($add_date);
-                $add_date[] = array(
+              
+              // If an end date was was calculated above, use that too.
+              // iCalcreator expects RDATEs that have end dates to be
+              // specified as array($start_rdate, $end_rdate).
+              if (isset($end)) {
+                $rdate_with_end = array($rdate);
+                $rdate_with_end[] = array(
                   'year' =>  $addition_array['year'],
                   'month' => $addition_array['month'],
                   'day' =>   $addition_array['day'],
@@ -256,12 +274,18 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
                   'second' => $end['second'],
                   'tz' =>     $end['tz']->getName(),
                 );
+                $rdate = $rdate_with_end;
               }
               
-              $add_dates[] = $add_date;
+              $rdates[] = $rdate;
             }
-            // Add the additions as 'RDATE's.
-            $vevent->setRdate($add_dates);
+            // Add each addition as a separate RDATE property.
+            // The spec supports putting multiple date values into one RDATE,
+            // but several popular calendar clients (*cough* Apple *cough*)
+            // are bugged, and do not recognize multi-value RDATEs.
+            foreach ($rdates as $rdate) {
+              $vevent->setRdate(array($rdate));
+            }
           }
         }
         if (!empty($event['url'])) {
@@ -290,7 +314,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
         drupal_alter('date_ical_feed_ical_vevent_render', $vevent, $this->view, $event);
       }
       
-      // Now add all the timezones we just used to the calendar.
+      // Now add to the calendar all the timezones used by the events.
       foreach ($timezones as $timezone) {
         if (strtoupper($timezone) != 'UTC') {
           iCalUtilityFunctions::createTimezone($vcalendar, $timezone);
@@ -301,16 +325,12 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       drupal_alter('date_ical_feed_ical_vcalendar_render', $vcalendar, $this->view);
       
       $output = $vcalendar->createCalendar();
-      // For some unknown reason (overzealous spec comnpliance?), iCalcreator
+      // For some unknown reason (overzealous spec compliance?), iCalcreator
       // escapes all commas and semicolons in the strings that it outputs.
       // This unescapes them, though it does it with a pretty big hammer. This
       // might be going too far.
       $output = str_replace('\,', ',', $output);
       $output = str_replace('\;', ';', $output);
-    }
-    else {
-      // The iCalcreator library isn't available, so we can't output anything.
-      $output = t('Please install the iCalcreator library to enable iCal output.');
     }
     
     // These steps shouldn't be run when doing a Preview on the View config page.

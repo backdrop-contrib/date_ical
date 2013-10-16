@@ -82,7 +82,7 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
         Choose which text, taxonomy term reference or Node Reference field you would like to be output as the SUMMARY.
         If using a Node Reference, the Title of the referenced node will be used.'),
     );
-
+    
     // Build the select dropdown for the text/node_reference field that the user
     // wants to use to (optionally) populate the LOCATION.
     $location_fields = date_ical_get_location_fields($this->base_table);
@@ -336,6 +336,10 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
     // as UTC, so we just need to specify that UTC be used rather than the server's local timezone.
     if (isset($entity->changed)) {
       $event['last-modified'] = new DateObject($entity->changed, new DateTimeZone('UTC'));
+    }
+    else if (isset($entity->created)) {
+      // If the changed date isn't set, but the created date is, use that instead.
+      $event['last-modified'] = new DateObject($entity->created, new DateTimeZone('UTC'));
     }
     
     // Allow other modules to alter the structured event object, before it gets

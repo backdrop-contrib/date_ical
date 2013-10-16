@@ -10,7 +10,7 @@
  * and formats it as an iCal VEVENT.
  */
 class date_ical_plugin_row_ical_fields extends views_plugin_row {
-
+  
   function option_definition() {
     $options = parent::option_definition();
     $options['date_field'] = array('default' => '');
@@ -20,7 +20,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     $options['additional_settings']['skip_blank_dates'] = array('default' => FALSE);
     return $options;
   }
-
+  
   function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
     $blank_label = array('' => t('- None -'));
@@ -129,10 +129,15 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     if (isset($entity->changed)) {
       $event['last-modified'] = new DateObject($entity->changed, new DateTimeZone('UTC'));
     }
+    else if (isset($entity->created)) {
+      // If the changed date isn't set, but the created date is, use that instead.
+      $event['last-modified'] = new DateObject($entity->created, new DateTimeZone('UTC'));
+    }
+    
     $uri = entity_uri($entity_type, $entity);
     $uri['options']['absolute'] = TRUE;
     $event['url'] = url($uri['path'], $uri['options']);
-
+    
     // Generate a unique ID for this event by emulating the way the Date module
     // creates a Date ID.
     if (isset($row->{"field_data_{$this->options['date_field']}_delta"})) {
@@ -155,7 +160,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     $date_field_name = $this->options['date_field'];
     $domain = check_plain($_SERVER['SERVER_NAME']);
     $event['uid'] = "calendar.$entity_id.$date_field_name.$date_field_delta@$domain";
-
+    
     // Because of the way that Date implements repeating dates, we're going to
     // be given a separate view result for each repeat. We only want to
     // render a VEVENT (with an RRULE) for the first instance of that date, so
@@ -222,15 +227,15 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     $rrule = NULL;
     $delta = 0;
     $is_date_field = FALSE;
-
+    
     // Fetch the date field value.
     $date_field_value = $this->view->style_plugin->get_field_value($row_index, $this->options['date_field']);
-
+    
     // Handle date fields.
     if (isset($date_field_value[$delta]) && is_array($date_field_value[$delta])) {
       $is_date_field = TRUE;
       $date_field = $date_field_value[$delta];
-
+      
       $start = new DateObject($date_field['value'], $date_field['timezone_db']);
       if (array_key_exists('value2', $date_field)) {
         $end = new DateObject($date_field['value2'], $date_field['timezone_db']);
@@ -253,41 +258,41 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       $title = strip_tags($this->view->style_plugin->get_field($row_index, $this->options['title_field']));
       throw new BlankDateFieldException("The row '$title' has a blank date. An iCal entry cannot be created for it.");
     }
-
+    
     // Set the display timezone to whichever tz is stored for this field.
     // If there isn't a stored TZ, use the site default.
     $timezone = isset($date_field['timezone']) ? $date_field['timezone'] : date_default_timezone(FALSE);
     $dtz = new DateTimeZone($timezone);
     $start->setTimezone($dtz);
     $end->setTimezone($dtz);
-
+    
     $granularity = 'second';
     if ($is_date_field) {
       $granularity_settings = $this->view->field[$this->options['date_field']]->field_info['settings']['granularity'];
       $granularity = date_granularity_precision($granularity_settings);
     }
-
+    
     // Check if the start and end dates indicate that this is an All Day event.
     $all_day = date_is_all_day(
       date_format($start, DATE_FORMAT_DATETIME),
       date_format($end, DATE_FORMAT_DATETIME),
       $granularity
     );
-
+    
     if ($all_day) {
       // According to RFC 2445 (clarified in RFC 5545) the DTEND value is
       // non-inclusive. When dealing with All Day values, they are DATEs rather
       // than DATETIMEs, so we need to add a day to conform to RFC.
       $end->modify("+1 day");
     }
-
+    
     $date = array(
       'start' => $start,
       'end' => $end,
       'all_day' => $all_day,
       'rrule' => $rrule,
     );
-
+    
     return $date;
   }
 

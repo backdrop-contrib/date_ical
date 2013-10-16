@@ -85,8 +85,8 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
   }
   
   function render() {
-    if (empty($this->row_plugin) || !in_array($this->row_plugin->plugin_name, array('date_ical','date_ical_fields'))) {
-      debug('views_plugin_style_ical_feed: This style plugin supports only iCal Entity row and iCal Fields plugins.', NULL, TRUE);
+    if (empty($this->row_plugin) || !in_array($this->row_plugin->plugin_name, array('date_ical', 'date_ical_fields'))) {
+      debug('date_ical_plugin_style_ical_feed: This style plugin supports only the "iCal Entity" and "iCal Fields" row plugins.', NULL, TRUE);
       return t('To enable iCal output, this view\'s Format must be configured to Show: iCal Entity or iCal Fields.');
     }
     if ($this->row_plugin->plugin_name == 'date_ical_fields' && empty($this->row_plugin->options['date_field'])) {

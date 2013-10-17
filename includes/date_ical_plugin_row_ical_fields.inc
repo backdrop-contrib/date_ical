@@ -104,6 +104,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     // because this function must be compatible with views_plugin_row::render().
     $args = func_get_args();
     $row_index = $args[1];
+    $date_field_name = $this->options['date_field'];
     
     // Fetch the event's date information.
     try {
@@ -123,33 +124,38 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     // Create the event by starting with the date array from this row.
     $event = $date;
     
-    // Add the LAST-MODIFIED and URL components based on the original entity.
+    // Add the CREATED, LAST-MODIFIED, and URL components based on the entity.
+    // According to the iCal standard, CREATED and LAST-MODIFIED must be UTC.
+    // Fortunately, Drupal stores timestamps in the DB as UTC, so we just need
+    // to specify that UTC be used rather than the server's local timezone.
     $entity = $row->_field_data[$this->view->base_field]['entity'];
     $entity_type = $row->_field_data[$this->view->base_field]['entity_type'];
+    if (isset($entity->created)) {
+      $event['created'] = new DateObject($entity->created, new DateTimeZone('UTC'));
+    }
     if (isset($entity->changed)) {
       $event['last-modified'] = new DateObject($entity->changed, new DateTimeZone('UTC'));
     }
     else if (isset($entity->created)) {
-      // If the changed date isn't set, but the created date is, use that instead.
+      // If changed is unset, but created is, use that for last-modified.
       $event['last-modified'] = new DateObject($entity->created, new DateTimeZone('UTC'));
     }
-    
     $uri = entity_uri($entity_type, $entity);
     $uri['options']['absolute'] = TRUE;
     $event['url'] = url($uri['path'], $uri['options']);
     
     // Generate a unique ID for this event by emulating the way the Date module
     // creates a Date ID.
-    if (isset($row->{"field_data_{$this->options['date_field']}_delta"})) {
-      $date_field_delta = $row->{"field_data_{$this->options['date_field']}_delta"};
+    if (isset($row->{"field_data_{$date_field_name}_delta"})) {
+      $date_field_delta = $row->{"field_data_{$date_field_name}_delta"};
     }
     else {
-      // I'm not sure why the "field_data_<field_name>_delta" field is part of
+      // I'm not sure why the "field_data_{field_name}_delta" field is part of
       // the $row, so it's possible that it will sometimes be missing. If it
       // is, make an educated guess about the delta by comparing this row's
       // start date to each of the entity's dates.
       $date_field_delta = 0;
-      foreach ($entity->{$this->options['date_field']}['und'] as $ndx => $date_array) {
+      foreach ($entity->{$date_field_name}['und'] as $ndx => $date_array) {
         if ($date['start']->originalTime == $date_array['value']) {
           $date_field_delta = $ndx;
           break;
@@ -157,7 +163,6 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       }
     }
     $entity_id = $row->{$this->view->base_field};
-    $date_field_name = $this->options['date_field'];
     $domain = check_plain($_SERVER['SERVER_NAME']);
     $event['uid'] = "calendar.$entity_id.$date_field_name.$date_field_delta@$domain";
     

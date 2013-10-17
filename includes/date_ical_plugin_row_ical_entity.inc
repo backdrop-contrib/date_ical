@@ -331,14 +331,19 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
       $this->entities[$id] = NULL;
     }
     
-    // Pull the 'changed' date from the entity, so that subscription clients can tell if the event has been updated.
-    // According to the iCal standard, LAST-MODIFIED must be UTC. Fortunately, Drupal stores timestamps in the DB
-    // as UTC, so we just need to specify that UTC be used rather than the server's local timezone.
+    // According to the iCal standard, CREATED and LAST-MODIFIED must be UTC.
+    // Fortunately, Drupal stores timestamps in the DB as UTC, so we just need
+    // to specify that UTC be used rather than the server's local timezone.
+    if (isset($entity->created)) {
+      $event['created'] = new DateObject($entity->created, new DateTimeZone('UTC'));
+    }
+    // Pull the 'changed' date from the entity (if available), so that
+    // subscription clients can tell if the event has been updated.
     if (isset($entity->changed)) {
       $event['last-modified'] = new DateObject($entity->changed, new DateTimeZone('UTC'));
     }
     else if (isset($entity->created)) {
-      // If the changed date isn't set, but the created date is, use that instead.
+      // If changed is unset, but created is, use that for last-modified.
       $event['last-modified'] = new DateObject($entity->created, new DateTimeZone('UTC'));
     }
     

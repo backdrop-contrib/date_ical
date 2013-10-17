@@ -10,7 +10,7 @@
  */
 class date_ical_plugin_style_ical_feed extends views_plugin_style {
   
-  function _get_option($option_name) {
+  protected function _get_option($option_name) {
     return isset($this->options[$option_name]) ? $this->options[$option_name] : '';
   }
   
@@ -51,8 +51,9 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
   function option_definition() {
     $options = parent::option_definition();
     $options['cal_name'] = array('default' => array());
-    $options['no_calname'] = array('default' => array());
-    $options['disable_webcal'] = array('default' => array());
+    $options['no_calname'] = array('default' => FALSE, 'bool' => TRUE);
+    $options['disable_webcal'] = array('default' => FALSE, 'bool' => TRUE);
+    $options['exclude_dtstamp'] = array('default' => FALSE, 'bool' => TRUE);
     return $options;
   }
   
@@ -81,6 +82,15 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       '#description' => t("By default, the feed URL will use the webcal:// scheme, which allows calendar
         clients to easily subscribe to the feed. If you want your users to instead download this iCal
         feed as a file, activate this option."),
+    );
+    $form['exclude_dtstamp'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Exclude DTSTAMP'),
+      '#default_value' => $this->_get_option('exclude_dtstamp'),
+      '#description' => t("By default, the feed will set each event's DTSTAMP property to the time at which the feed got downloaded.
+        Some feed readers will (incorrectly) look at the DTSTAMP value when they compare different downloads of the same feed, and
+        conclcude that the event has been updated (even though it hasn't actually changed). Enable this option to exclude the DTSTAMP
+        field from your feeds, so that these buggy feed readers won't mark every event as updated every time they check."),
     );
   }
   
@@ -309,6 +319,18 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
             $lm['timezone']
           );
         }
+        if (!empty($event['created'])) {
+          $created = $event['created']->toArray();
+          $vevent->setCreated(
+            $created['year'],
+            $created['month'],
+            $created['day'],
+            $created['hour'],
+            $created['minute'],
+            $created['second'],
+            $created['timezone']
+          );
+        }
         
         // Allow other modules to alter the VEVENT object.
         drupal_alter('date_ical_feed_ical_vevent_render', $vevent, $this->view, $event);
@@ -331,6 +353,22 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       // might be going too far.
       $output = str_replace('\,', ',', $output);
       $output = str_replace('\;', ';', $output);
+      
+      // In order to respect the Exclude DTSTAMP option, we unfortunately have
+      // to parse out the DTSTAMP properties after they get rendered. Simply
+      // using deleteProperty('DTSTAMP') doesn't work, because iCalcreator
+      // considers the DTSTAMP to be essential, and will re-create it when
+      // createCalendar() is called.
+      if ($this->_get_option('exclude_dtstamp')) {
+        $filtered_lines = array();
+        foreach (explode("\r\n", $output) as $line) {
+          if (strpos($line, 'DTSTAMP') === 0) {
+            continue;
+          }
+          $filtered_lines[] = $line;
+        }
+        $output = implode("\r\n", $filtered_lines);
+      }
     }
     
     // These steps shouldn't be run when doing a Preview on the View config page.

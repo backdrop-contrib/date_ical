@@ -207,8 +207,8 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
     }
     
     // Set the item date to the proper display timezone.
-    $start->setTimezone(new dateTimezone($date_field['timezone']));
-    $end->setTimezone(new dateTimezone($date_field['timezone']));
+    $start->setTimezone(new DateTimeZone($date_field['timezone']));
+    $end->setTimezone(new DateTimeZone($date_field['timezone']));
     
     // Check if the start and end dates indicate that this is an All Day event.
     $all_day = date_is_all_day(
@@ -304,7 +304,7 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
       'entity_type' => $this->entity_type,
       'language' => $this->language,
     );
-    drupal_alter('date_ical_html', $data, $this->view, $context);
+    drupal_alter('date_ical_export_html', $data, $this->view, $context);
     
     $event = array();
     $event['summary'] = date_ical_sanitize_text($data['summary']);
@@ -333,23 +333,23 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
     
     // According to the iCal standard, CREATED and LAST-MODIFIED must be UTC.
     // Fortunately, Drupal stores timestamps in the DB as UTC, so we just need
-    // to specify that UTC be used rather than the server's local timezone.
+    // to tell Date to treat the timestamp as UTC from the start.
     if (isset($entity->created)) {
-      $event['created'] = new DateObject($entity->created, new DateTimeZone('UTC'));
+      $event['created'] = new DateObject($entity->created, 'UTC');
     }
     // Pull the 'changed' date from the entity (if available), so that
     // subscription clients can tell if the event has been updated.
     if (isset($entity->changed)) {
-      $event['last-modified'] = new DateObject($entity->changed, new DateTimeZone('UTC'));
+      $event['last-modified'] = new DateObject($entity->changed, 'UTC');
     }
     else if (isset($entity->created)) {
       // If changed is unset, but created is, use that for last-modified.
-      $event['last-modified'] = new DateObject($entity->created, new DateTimeZone('UTC'));
+      $event['last-modified'] = new DateObject($entity->created, 'UTC');
     }
     
     // Allow other modules to alter the structured event object, before it gets
-    // passed to the style plugin to be converted into an iCal VEVENT.
-    drupal_alter('date_ical_feed_event_render', $event, $this->view, $context);
+    // passed to the style plugin to be converted into an iCalcreator vevent.
+    drupal_alter('date_ical_export_raw_event', $event, $this->view, $context);
     
     return $event;
   }

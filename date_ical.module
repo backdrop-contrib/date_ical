@@ -3,20 +3,36 @@
 /**
  * @file
  * Adds ical functionality to Views, and an iCal parser to Feeds.
- *
- * TODO Figure out how to incorporate VVENUE information into the parser.
  */
 
 /**
  * The version number of the current release. This is inserted into the PRODID
  * value of the iCal feeds created by Date iCal.
  */
-define('DATE_ICAL_VERSION', '2.13-dev');
+define('DATE_ICAL_VERSION', '3.0-dev');
 
 /**
  * Exception for when the date field for a row in the ical_fields row plugin is blank.
  */
 class BlankDateFieldException extends Exception { }
+
+/**
+ * Generic DateIcalFeedsParser exceptions.
+ */
+class DateIcalException extends Exception {}
+
+/**
+ * DateIcalFeedsParser failed to parse some part of iCal.
+ */
+class DateIcalParseException extends DateIcalException {}
+
+/**
+ * Implements hook_hook_info().
+ */
+function date_ical_hook_info() {
+  // TODO: Finish this.
+  // Use two "groups": date_ical_parse and date_ical_output.
+}
 
 /**
  * Implements hook_views_api().
@@ -134,7 +150,7 @@ function date_ical_libraries_info() {
 }
 
 /**
- * Implementation of hook_ctools_plugin_api().
+ * Implements hook_ctools_plugin_api().
  */
 function date_ical_ctools_plugin_api($owner, $api) {
   if ($owner == 'feeds' && $api == 'plugins') {
@@ -143,32 +159,41 @@ function date_ical_ctools_plugin_api($owner, $api) {
 }
 
 /**
- * Implementation of ctools plugin for feeds hook_feeds_plugins().
+ * Implements hook_feeds_plugins().
  */
 function date_ical_feeds_plugins() {
   $path = drupal_get_path('module', 'date_ical') . '/includes';
   $info = array();
-  $info['DateIcalFeedsParser'] = array(
+  $info['DateIcalFeedsParserOld'] = array(
     'hidden' => TRUE,
     'handler' => array(
       'parent' => 'FeedsParser',
-      'class' => 'DateIcalFeedsParser',
-      'file' => 'DateIcalFeedsParser.inc',
+      'class' => 'DateIcalFeedsParserOld',
+      'file' => 'DateIcalFeedsParserOld.inc',
       'path' => $path,
     ),
   );
   $info['DateIcalIcalcreatorParser'] = array(
-    'name' => 'iCal parser',
+    'name' => 'iCal parser (old)',
     'description' => t('Use the iCalcreator library to parse iCal feeds.'),
     'help' => 'Parse iCal feeds.',
     'handler' => array(
-      'parent' => 'DateIcalFeedsParser',
+      'parent' => 'DateIcalFeedsParserOld',
       'class' => 'DateIcalIcalcreatorParser',
       'file' => 'DateIcalIcalcreatorParser.inc',
       'path' => $path,
     ),
   );
-  
+  $info['DateiCalFeedsParser'] = array(
+    'name' => 'iCal parser',
+    'description' => t('Parse iCal feeds.'),
+    'handler' => array(
+      'parent' => 'FeedsParser',
+      'class' => 'DateiCalFeedsParser',
+      'file' => 'DateiCalFeedsParser.inc',
+      'path' => $path,
+    ),
+  );
   return $info;
 }
 

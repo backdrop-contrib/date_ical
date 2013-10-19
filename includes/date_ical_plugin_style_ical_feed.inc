@@ -54,6 +54,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
     $options['no_calname'] = array('default' => FALSE, 'bool' => TRUE);
     $options['disable_webcal'] = array('default' => FALSE, 'bool' => TRUE);
     $options['exclude_dtstamp'] = array('default' => FALSE, 'bool' => TRUE);
+    $options['unescape_punctuation'] = array('default' => FALSE, 'bool' => TRUE);
     return $options;
   }
   
@@ -91,6 +92,14 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
         Some feed readers will (incorrectly) look at the DTSTAMP value when they compare different downloads of the same feed, and
         conclcude that the event has been updated (even though it hasn't actually changed). Enable this option to exclude the DTSTAMP
         field from your feeds, so that these buggy feed readers won't mark every event as updated every time they check."),
+    );
+    $form['unescape_punctuation'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('Unescape Commas and Semicolons'),
+      '#default_value' => $this->_get_option('unescape_punctuation'),
+      '#description' => t('In order to comply with the iCal spec, Date iCal will "escape" commas and semicolons (prepend them with backslashes).
+        However, many calendar clients are bugged to not unescape these characters, leaving the backslashes littered throughout your events\' text fields.
+        Enable this option to have Date iCal unescape these characters before it exports the iCal feed.'),
     );
   }
   
@@ -160,11 +169,11 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
         $vevent = $vcalendar->newComponent('vevent');
         // Get the start date as an array.
         $start = $event['start']->toArray();
-        $timezone = $event['start']->getTimezone()->getName();
-        $timezones[$timezone] = $timezone;
+        $start_timezone = $event['start']->getTimezone()->getName();
+        $timezones[$start_timezone] = $start_timezone;
         
         if ($event['all_day']) {
-          // All day events need to be specified as DATE, rather than DATE-TIME, or they get interpretted wrong.
+          // All Day events need to be specified as DATE, rather than DATE-TIME, or they get interpretted wrong.
           $vevent->setDtstart($start['year'], $start['month'], $start['day'],
             FALSE, FALSE, FALSE, FALSE, array('VALUE' => 'DATE'));
         }
@@ -176,7 +185,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
             $start['hour'],
             $start['minute'],
             $start['second'],
-            $timezone
+            $start_timezone
           );
         }
         
@@ -186,8 +195,8 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
         // Only add the end date if there is one.
         if (!empty($event['end'])) {
           $end = $event['end']->toArray();
-          $timezone = $event['end']->getTimezone()->getName();
-          $timezones[$timezone] = $timezone;
+          $end_timezone = $event['end']->getTimezone()->getName();
+          $timezones[$end_timezone] = $end_timezone;
           
           if ($event['all_day']) {
             $vevent->setDtend($end['year'], $end['month'], $end['day'],
@@ -201,7 +210,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
               $end['hour'],
               $end['minute'],
               $end['second'],
-              $timezone
+              $end_timezone
             );
           }
           $end['tz'] = $event['end']->getTimezone();
@@ -332,8 +341,8 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
           );
         }
         
-        // Allow other modules to alter the VEVENT object.
-        drupal_alter('date_ical_feed_ical_vevent_render', $vevent, $this->view, $event);
+        // Allow other modules to alter the vevent before it's exported.
+        drupal_alter('date_ical_export_vevent', $vevent, $this->view, $event);
       }
       
       // Now add to the calendar all the timezones used by the events.
@@ -343,16 +352,20 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
         }
       }
       
-      // Allow other modules to alter the calendar as a whole.
-      drupal_alter('date_ical_feed_ical_vcalendar_render', $vcalendar, $this->view);
+      // Allow other modules to alter the vcalendar before it's exported.
+      drupal_alter('date_ical_export_vcalendar', $vcalendar, $this->view);
       
       $output = $vcalendar->createCalendar();
-      // For some unknown reason (overzealous spec compliance?), iCalcreator
-      // escapes all commas and semicolons in the strings that it outputs.
-      // This unescapes them, though it does it with a pretty big hammer. This
-      // might be going too far.
-      $output = str_replace('\,', ',', $output);
-      $output = str_replace('\;', ';', $output);
+      // iCalcreator escapes all commas and semicolons in the strings that it,
+      // as the spec demands. However, some calendar clients are buggy and
+      // don't unescape these characters. Users may choose to unescape them
+      // here to sidestep those clients' bugs.
+      // NOTE: This results in a non-compliant iCal feed, but it seems like a
+      // LOT of major clients are bugged this way.
+      if ($this->_get_option('unescape_punctuation')) {
+        $output = str_replace('\,', ',', $output);
+        $output = str_replace('\;', ';', $output);
+      }
       
       // In order to respect the Exclude DTSTAMP option, we unfortunately have
       // to parse out the DTSTAMP properties after they get rendered. Simply
@@ -388,8 +401,8 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       }
     }
     
-    // Allow other modules to alter the rendered calendar, just before it gets sent out.
-    drupal_alter('date_ical_post_render', $output, $this->view);
+    // Allow other modules to alter the rendered calendar.
+    drupal_alter('date_ical_export_post_render', $output, $this->view);
     
     return $output;
   }

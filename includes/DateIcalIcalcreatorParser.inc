@@ -3,9 +3,11 @@
 /**
  * @file
  *  Classes implementing Date iCal's iCalcreator-based parser functionality.
+ *
+ *  @TODO: Figure out how to incorporate VVENUE information into the parser.
  */
 
-class DateIcalIcalcreatorParser extends DateIcalFeedsParser {
+class DateIcalIcalcreatorParser extends DateIcalFeedsParserOld {
   
   /**
    * Output sources this parser offers.
@@ -123,22 +125,18 @@ class DateIcalIcalcreatorParser extends DateIcalFeedsParser {
       }
     }
     
-    // DEV NOTES:
-    // Due to the way that the loop after this one manipulates the $components array, all the work that gets done in here
-    // gets overridden. However, we probably *should* be using this, somehow, since I think it was in the old version
-    // in order to handle non-standard VTIMEZONES. Maybe?
-    $components = array();
-    while ($component = $calendar->getComponent('VTIMEZONE')) {
-      $components[$component->getProperty('tzid')] = new DateIcalIcalcreatorComponent($component);
+    $timezones = array();
+    while ($raw_component = $calendar->getComponent('VTIMEZONE')) {
+      $timezones[$raw_component->getProperty('tzid')] = new DateIcalIcalcreatorComponent($raw_component);
     }
-    $result->timezones = $components;
+    $result->timezones = $timezones;
     
     // Separate the individual feed items into DateIcalIcalcreatorComponents.
     $components = array();
     $component_types = array('vevent', 'vtodo', 'vjournal', 'vfreebusy', 'valarm');
     foreach ($component_types as $component_type) {
-      while ($component = $calendar->getComponent($component_type)) {
-        $component = new DateIcalIcalcreatorComponent($component);
+      while ($raw_component = $calendar->getComponent($component_type)) {
+        $component = new DateIcalIcalcreatorComponent($raw_component);
         
         // Allow modules to alter the DateIcalIcalcreatorComponent before we
         // parse it into Feeds-readable data.

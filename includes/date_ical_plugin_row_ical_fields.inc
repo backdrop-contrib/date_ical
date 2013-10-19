@@ -131,14 +131,14 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     $entity = $row->_field_data[$this->view->base_field]['entity'];
     $entity_type = $row->_field_data[$this->view->base_field]['entity_type'];
     if (isset($entity->created)) {
-      $event['created'] = new DateObject($entity->created, new DateTimeZone('UTC'));
+      $event['created'] = new DateObject($entity->created, 'UTC');
     }
     if (isset($entity->changed)) {
-      $event['last-modified'] = new DateObject($entity->changed, new DateTimeZone('UTC'));
+      $event['last-modified'] = new DateObject($entity->changed, 'UTC');
     }
     else if (isset($entity->created)) {
       // If changed is unset, but created is, use that for last-modified.
-      $event['last-modified'] = new DateObject($entity->created, new DateTimeZone('UTC'));
+      $event['last-modified'] = new DateObject($entity->created, 'UTC');
     }
     $uri = entity_uri($entity_type, $entity);
     $uri['options']['absolute'] = TRUE;
@@ -193,8 +193,9 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       'row' => $row,
       'row_index' => $row_index,
       'language' => $this->language,
+      'options' => $this->options,
     );
-    drupal_alter('date_ical_fields_html', $text_fields, $this->view, $context);
+    drupal_alter('date_ical_export_html', $text_fields, $this->view, $context);
     
     // Sanitize the text fields for iCal compliance, and add them to the event.
     // Also strip all HTML from the summary and location fields, since they
@@ -205,12 +206,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     
     // Allow other modules to alter the event object, before it gets passed to
     // the style plugin to be converted into an iCal VEVENT.
-    $context = array(
-      'entity' => $entity,
-      'entity_type' => $entity_type,
-      'language' => $this->language,
-    );
-    drupal_alter('date_ical_feed_event_render', $event, $this->view, $context);
+    drupal_alter('date_ical_export_raw_event', $event, $this->view, $context);
     
     return $event;
   }
@@ -242,7 +238,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       $date_field = $date_field_value[$delta];
       
       $start = new DateObject($date_field['value'], $date_field['timezone_db']);
-      if (array_key_exists('value2', $date_field)) {
+      if (!empty($date_field['value2'])) {
         $end = new DateObject($date_field['value2'], $date_field['timezone_db']);
       }
       else {
@@ -254,7 +250,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       }
     }
     elseif (is_numeric($date_field_value)) {
-      // Handle timestamps, which are always saved in UTC.
+      // Handle timestamps, which are always in UTC.
       $start = new DateObject($date_field_value, 'UTC');
       $end   = new DateObject($date_field_value, 'UTC');
     }
@@ -330,9 +326,11 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
    * Retrieves a field value from the style plugin.
    *
    * @param int $index
-   *   The index count of the row @see views_plugin_style::get_field().
+   *   The index count of the row
    * @param string $field_id
    *   The ID assigned to the required field in the display.
+   *
+   * @see views_plugin_style::get_field().
    */
   function get_field($index, $field_id) {
     if (empty($this->view->style_plugin) || !is_object($this->view->style_plugin) || empty($field_id)) {

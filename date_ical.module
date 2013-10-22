@@ -31,7 +31,7 @@ class DateIcalParseException extends DateIcalException {}
  */
 function date_ical_hook_info() {
   // TODO: Finish this.
-  // Use two "groups": date_ical_parse and date_ical_output.
+  // Use two "groups": date_ical_import and date_ical_export.
 }
 
 /**
@@ -42,6 +42,45 @@ function date_ical_views_api() {
     'api' => 3,
     'path' => drupal_get_path('module', 'date_ical') . '/includes',
   );
+}
+
+/**
+ * Implements hook_feeds_plugins().
+ */
+function date_ical_feeds_plugins() {
+  $path = drupal_get_path('module', 'date_ical') . '/includes';
+  $info = array();
+  $info['DateIcalFeedsParserOld'] = array(
+    'hidden' => TRUE,
+    'handler' => array(
+      'parent' => 'FeedsParser',
+      'class' => 'DateIcalFeedsParserOld',
+      'file' => 'DateIcalFeedsParserOld.inc',
+      'path' => $path,
+    ),
+  );
+  $info['DateIcalIcalcreatorParser'] = array(
+    'name' => 'iCal parser (old)',
+    'description' => t('Use the iCalcreator library to parse iCal feeds.'),
+    'help' => 'Parse iCal feeds.',
+    'handler' => array(
+      'parent' => 'DateIcalFeedsParserOld',
+      'class' => 'DateIcalIcalcreatorParser',
+      'file' => 'DateIcalIcalcreatorParser.inc',
+      'path' => $path,
+    ),
+  );
+  $info['DateiCalFeedsParser'] = array(
+    'name' => 'iCal parser',
+    'description' => t('Parse iCal feeds.'),
+    'handler' => array(
+      'parent' => 'FeedsParser',
+      'class' => 'DateiCalFeedsParser',
+      'file' => 'DateiCalFeedsParser.inc',
+      'path' => $path,
+    ),
+  );
+  return $info;
 }
 
 /**
@@ -159,45 +198,6 @@ function date_ical_ctools_plugin_api($owner, $api) {
 }
 
 /**
- * Implements hook_feeds_plugins().
- */
-function date_ical_feeds_plugins() {
-  $path = drupal_get_path('module', 'date_ical') . '/includes';
-  $info = array();
-  $info['DateIcalFeedsParserOld'] = array(
-    'hidden' => TRUE,
-    'handler' => array(
-      'parent' => 'FeedsParser',
-      'class' => 'DateIcalFeedsParserOld',
-      'file' => 'DateIcalFeedsParserOld.inc',
-      'path' => $path,
-    ),
-  );
-  $info['DateIcalIcalcreatorParser'] = array(
-    'name' => 'iCal parser (old)',
-    'description' => t('Use the iCalcreator library to parse iCal feeds.'),
-    'help' => 'Parse iCal feeds.',
-    'handler' => array(
-      'parent' => 'DateIcalFeedsParserOld',
-      'class' => 'DateIcalIcalcreatorParser',
-      'file' => 'DateIcalIcalcreatorParser.inc',
-      'path' => $path,
-    ),
-  );
-  $info['DateiCalFeedsParser'] = array(
-    'name' => 'iCal parser',
-    'description' => t('Parse iCal feeds.'),
-    'handler' => array(
-      'parent' => 'FeedsParser',
-      'class' => 'DateiCalFeedsParser',
-      'file' => 'DateiCalFeedsParser.inc',
-      'path' => $path,
-    ),
-  );
-  return $info;
-}
-
-/**
  * Implements hook_feeds_processor_targets_alter().
  *
  * Adds the "Field Name: Repeat Rule" target to Date Repeat Fields.
@@ -267,102 +267,11 @@ function date_ical_feeds_set_rrule($source, $entity, $target, $feed_element) {
   $info = field_info_field($field_name);
   foreach ($entity->{$field_name} as $lang => $field_array) {
     // Add the multiple date values that Date Repeat Field uses to represent recurring dates.
-    $values = date_ical_build_repeating_dates($feed_element, NULL, $info, $field_array[0]);
+    $values = date_repeat_build_dates($feed_element, NULL, $info, $field_array[0]);
     foreach ($values as $key => $value) {
       $entity->{$field_name}[$lang][$key] = $value;
     }
   }
-}
-
-/**
- * 99% copy-pasta from date_repeat_field.module's date_repeat_build_dates() function.
- * The only change is that we assume COUNT=52 on indefinitely repeating RRULEs, rather than
- * giving up completely.
- */
-function date_ical_build_repeating_dates($rrule = NULL, $rrule_values = NULL, $field, $item) {
-  module_load_include('inc', 'date_api', 'date_api_ical');
-  $field_name = $field['field_name'];
-  
-  if (empty($rrule)) {
-    $rrule = date_api_ical_build_rrule($rrule_values);
-  }
-  elseif (empty($rrule_values)) {
-    $rrule_values = date_ical_parse_rrule(NULL, $rrule);
-  }
-  
-  // By the time we get here, the start and end dates have been
-  // adjusted back to UTC, but we want localtime dates to do
-  // things like '+1 Tuesday', so adjust back to localtime.
-  $timezone = date_get_timezone($field['settings']['tz_handling'], $item['timezone']);
-  $timezone_db = date_get_timezone_db($field['settings']['tz_handling']);
-  $start = new DateObject($item['value'], $timezone_db, date_type_format($field['type']));
-  $start->limitGranularity($field['settings']['granularity']);
-  if ($timezone != $timezone_db) {
-    date_timezone_set($start, timezone_open($timezone));
-  }
-  if (!empty($item['value2']) && $item['value2'] != $item['value']) {
-    $end = new DateObject($item['value2'], date_get_timezone_db($field['settings']['tz_handling']), date_type_format($field['type']));
-    $end->limitGranularity($field['settings']['granularity']);
-    date_timezone_set($end, timezone_open($timezone));
-  }
-  else {
-    $end = $start;
-  }
-  $duration = $start->difference($end);
-  $start_datetime = date_format($start, DATE_FORMAT_DATETIME);
-  
-  if (!empty($rrule_values['UNTIL']['datetime'])) {
-    $end = date_ical_date($rrule_values['UNTIL'], $timezone);
-    $end_datetime = date_format($end, DATE_FORMAT_DATETIME);
-  }
-  elseif (!empty($rrule_values['COUNT'])) {
-    $end_datetime = NULL;
-  }
-  else {
-    // No UNTIL and no COUNT means this is an indefinitely repeating RRULE, which Date Repeat Field doesn't support.
-    // The best we can do is pretend it has a repeat count of 52 (52 weeks in a year, most repeats are weekly)
-    // by inserting a COUNT=52 param into the string, right after 'RRULE:'.
-    $rrule = substr_replace($rrule, 'COUNT=52;', 6, 0);
-    $end_datetime = NULL;
-  }
-  
-  // Split the RRULE into RRULE, EXDATE, and RDATE parts.
-  $parts = date_repeat_split_rrule($rrule);
-  $parsed_exceptions = (array) $parts[1];
-  $exceptions = array();
-  foreach ($parsed_exceptions as $exception) {
-    $date = date_ical_date($exception, $timezone);
-    $exceptions[] = date_format($date, 'Y-m-d');
-  }
-  
-  $parsed_rdates = (array) $parts[2];
-  $additions = array();
-  foreach ($parsed_rdates as $rdate) {
-    $date = date_ical_date($rdate, $timezone);
-    $additions[] = date_format($date, 'Y-m-d');
-  }
-  
-  $dates = date_repeat_calc($rrule, $start_datetime, $end_datetime, $exceptions, $timezone, $additions);
-  $value = array();
-  foreach ($dates as $delta => $date) {
-    // date_repeat_calc always returns DATE_DATETIME dates, which is
-    // not necessarily $field['type'] dates.
-    // Convert returned dates back to db timezone before storing.
-    $date_start = new DateObject($date, $timezone, DATE_FORMAT_DATETIME);
-    $date_start->limitGranularity($field['settings']['granularity']);
-    date_timezone_set($date_start, timezone_open($timezone_db));
-    $date_end = clone($date_start);
-    date_modify($date_end, '+' . $duration . ' seconds');
-    $value[$delta] = array(
-      'value' => date_format($date_start, date_type_format($field['type'])),
-      'value2' => date_format($date_end, date_type_format($field['type'])),
-      'offset' => date_offset_get($date_start),
-      'offset2' => date_offset_get($date_end),
-      'timezone' => $timezone,
-      'rrule' => $rrule,
-      );
-  }
-  return $value;
 }
 
 /**

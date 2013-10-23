@@ -7,28 +7,45 @@
  */
 
 class ParserVcalendar {
+  /**
+   * Variables used for parsing.
+   */
   protected $calendar;
   protected $source;
-  protected $fetcher_result;
+  protected $fetcherResult;
   protected $config;
   protected $timezones = array();
   protected $xtimezone;
-
+  
+  /**
+   * Variables used for batch processing.
+   */
+  protected $totalComponents = 0;
+  protected $lastComponentParsed = 0;
+  
   public function __construct($calendar, $source, $fetcher_result, $config) {
     $this->calendar = $calendar;
     $this->source = $source;
-    $this->fetcher_result = $fetcher_result;
+    $this->fetcherResult = $fetcher_result;
     $this->config = $config;
   }
 
   /**
    * Parses the vcalendar object into an array of event data arrays.
    *
+   * @param int $offset
+   *   This parameter, along with $limit, specfy which section of the feed
+   *   to parse. Useful for batch operation.
+   *
+   * @param int $limit
+   *   This parameter, along with $offset, specfy which section of the feed
+   *   to parse. Useful for batch operation.
+   *
    * @return array
-   *   An array keyed by the same property keys as returned by
-   *   DateiCalFeedsParser::getiCalMappingSources().
+   *   An array of parsed event data keyed by the same property keys as
+   *   returned by DateiCalFeedsParser::getiCalMappingSources().
    */
-  public function parse() {
+  public function parse($offset, $limit) {
     // Sometimes, the feed will set a timezone for every event in the calendar
     // using the non-standard X-WR-TIMEZONE property. Date iCal uses this
     // timezone only if the date property is not in UTC and has no TZID.
@@ -41,7 +58,7 @@ class ParserVcalendar {
         'calendar_component' => NULL,
         'calendar' => $this->calendar,
         'feeeds_source' => $this->source,
-        'feeds_fetcher_result' => $this->fetcher_result,
+        'feeds_fetcher_result' => $this->fetcherResult,
       );
       drupal_alter('date_ical_import_timezone', $xtimezone[1], $context);
       $this->xtimezone = $this->_tzid_to_datetimezone($xtimezone[1]);
@@ -51,9 +68,9 @@ class ParserVcalendar {
     while ($component = $this->calendar->getComponent('VTIMEZONE')) {
       $this->timezones[] = $component;
     }
-
-    // Parse each calendar component it into a Feeds-compatible data array.
-    $events = array();
+    
+    // Collect each component, so we can batch them properly in the next loop.
+    $raw_components = array();
     $component_types = array('VEVENT', 'VTODO', 'VJOURNAL', 'VFREEBUSY', 'VALARM');
     foreach ($component_types as $component_type) {
       while ($vcalendar_component = $this->calendar->getComponent($component_type)) {
@@ -62,22 +79,45 @@ class ParserVcalendar {
         $context = array(
           'calendar' => $this->calendar,
           'source' => $this->source,
-          'fetcher_result' => $this->fetcher_result,
+          'fetcher_result' => $this->fetcherResult,
         );
         drupal_alter('date_ical_import_component', $vcalendar_component, $context);
-
-        $parsed_component = array();
-        foreach (DateiCalFeedsParser::getiCalMappingSources() as $property_key => $data) {
-          $handler = $data['date_ical_parse_handler'];
-          $parsed_component[$property_key] = $this->$handler($property_key, $vcalendar_component);
-        }
-        $events[] = $parsed_component;
+        $raw_components[] = $vcalendar_component;
       }
     }
-
+    
+    // Store this for use by DateiCalFeedsParser's batch processing code.
+    $this->totalComponents = count($raw_components);
+    
+    // Parse each raw component in the current batch into a Feeds-compatible
+    // event data array.
+    $events = array();
+    $sources = DateiCalFeedsParser::getiCalMappingSources();
+    $batch = array_slice($raw_components, $offset, $limit, TRUE);
+    foreach ($batch as $ndx => $raw_component) {
+      $parsed_component = array();
+      foreach ($sources as $property_key => $data) {
+        $handler = $data['date_ical_parse_handler'];
+        $parsed_component[$property_key] = $this->$handler($property_key, $raw_component);
+      }
+      $events[] = $parsed_component;
+      // The indices of the original $raw_components array are preserved in
+      // $batch, so using the $ndx value here lets us communicate our progress
+      // through the full collection of commpenents.
+      $this->lastComponentParsed = $ndx;
+    }
+    
     return $events;
   }
-
+  
+  public function getTotalComponents() {
+    return $this->totalComponents;
+  }
+  
+  public function getLastComponentParsed() {
+    return $this->lastComponentParsed;
+  }
+  
   /**
    * Parses text fields.
    *
@@ -125,12 +165,41 @@ class ParserVcalendar {
     $dtstart = $vcalendar_component->getProperty('DTSTART', FALSE, TRUE);
     $dtend = $vcalendar_component->getProperty('DTEND', FALSE, TRUE);
     $uid = $vcalendar_component->getProperty('UID');
-
+    
+    // DATE-type values are treated as All Day events which can span over
+    // multiple days.
+    // The Date module's All Day event handling was never finalized
+    // (http://drupal.org/node/874322), which requires us to do some some
+    // special coddling later.
+    $is_all_day = (isset($property['params']['VALUE']) && $property['params']['VALUE'] == 'DATE');
+    
+    // Cover various conditions in which either DTSTART or DTEND are not set.
     if ($property === FALSE) {
+      // When DTEND isn't defined, we may need to emulate it.
       if ($property_key == 'DTEND') {
-        return NULL;
+        // Unset DTENDs need to emulate the DATE type from DTSTART.
+        $is_all_day = (isset($dtstart['params']['VALUE']) && $dtstart['params']['VALUE'] == 'DATE');
+        
+        if ($duration !== FALSE) {
+          // If a DURATION is defined, emulate DTEND as DTSTART + DURATION.
+          $property = $dtend = array(
+            'value' => iCalUtilityFunctions::_duration2date($dtstart['value'], $duration['value']),
+            'params' => $dtstart['params'],
+          );
+        }
+        else if ($is_all_day) {
+          // If this is an all-day event with no end or duration, treat this
+          // as a single-day event by emulating DTEND as 1 day after DTSTART.
+          $property = $dtend = $dtstart;
+          $property['value']['day'] = $dtend['value']['day'] = $dtstart['value']['day'] + 1;
+        }
+        else {
+          // This event has no end date.
+          return NULL;
+        }
       }
       else if ($property_key == 'DTSTART') {
+        // DTSTART can only be legally unset in non-VEVENT components.
         if ($vcalendar_component->objName == 'vevent') {
           throw new DateIcalParseException(t('Feed import failed! The VEVENT with UID %uid is invalid: it has no DTSTART.', array('%uid' => $uid)));
         }
@@ -139,28 +208,26 @@ class ParserVcalendar {
         }
       }
     }
-
-    // It's frustrating that iCalcreator gives us date data in a different
-    // format than what it expects us to give back.
-    if (isset($property['params']['TZID'])) {
-      $property['value']['tz'] = $property['params']['TZID'];
+    
+    // When iCalcreator parses a UTC date (one that ends with Z) from an iCal
+    // feed, it stores that 'Z' into the $property['value']['tz'] value.
+    if (isset($property['value']['tz'])) {
+      $property['params']['TZID'] = 'UTC';
     }
-
-    if (isset($property['params']['VALUE']) && $property['params']['VALUE'] == 'DATE') {
-      // DATE-type values are treated as All Day events, with no time-of-day.
-      // They can span over multiple days.
-      // The Date module's All Day event handling was never finalized:
-      // http://drupal.org/node/874322
+    
+    if ($is_all_day) {
       if ($property_key == 'DTEND') {
         if ($dtstart === FALSE) {
-          // This will almost certainly never happen, but the error message
-          // in this case should be comprehensible.
+          // This will almost certainly never happen, but the error message in
+          // this would be incomprehensible without this check.
           throw new DateIcalParseException(t('Feed import failed! The event with UID %uid is invalid: it has a DTEND but no DTSTART!', array('%uid' => $uid)));
         }
 
-        // If the Date All Day module is installed, single-day All Day events
-        // will be displayed wrong unless we ignore the DTEND value.
         if (module_exists('date_all_day')) {
+          // If the Date All Day module is installed, single-day All Day events
+          // will be displayed wrong unless we ignore the DTEND value. Yes, that
+          // means we may be ignoring work done in other parts of this function,
+          // but we need that work for when Date All Day isn't installed.
           $prev_day = iCalUtilityFunctions::_duration2date($property['value'], array('day' => -1));
           if ($dtstart['value'] == $prev_day) {
             return NULL;
@@ -173,87 +240,56 @@ class ParserVcalendar {
           }
         }
       }
-      else if ($property_key == 'DTSTART') {
-        // NOTE TO MAINTAINERS: This is why DTSTART *must* be parsed first!
-        // If DTEND is parsed first, this block will have no effect.
-        if ($dtend === FALSE && $duration === FALSE) {
-          // If the All Day event has no DTEND and no DURATION, assume the
-          // event is a single day: set DTEND = DTSTART + 1 day.
-          $end = $property['value'];
-          $end['day'] += 1;
-          $vcalendar_component->setDtend($end['year'], $end['month'], $end['day'], FALSE, FALSE, FALSE, FALSE, array('VALUE' => 'DATE'));
-        }
-      }
 
       // FeedsDateTime->setTimezone() ignores timezone changes made to dates
       // with no time element, which means we can't compensate for the Date
-      // module's automatic conversion to UTC when it writes to the DB. To get
-      // around that, we must add 00:00:00 explicitly.
+      // module's automatic timezone conversion when it writes to the DB. To
+      // get around that, we must add 00:00:00 explicitly, even though this
+      // causes other problems (see above and below).
       $date_string = sprintf('%d-%d-%d 00:00:00', $property['value']['year'], $property['value']['month'], $property['value']['day']);
       // Use the server's timezone rather than letting it default to UTC.
-      // This will ensure that the date value doesn't get messed up when Date
-      // converts it back from UTC when it's read from the database.
+      // This will help ensure that the date value doesn't get messed up when
+      // Date converts its timezone as it's read from the database.
+      // This is *essential* for All Day events, because Date stores them as
+      // '2013-10-03 00:00:00' in the database, rather than doing the sensible
+      // thing and storing them as '2013-10-03'.
+      // NOTE TO MAINTAINERS:
+      // This will not work properly if the site is configured to allow users
+      // to set their own timezone. Unfortunately, there isn't anything that
+      // Date iCal can do about that, as far as I can tell. -- coredumperror
       $datetimezone = new DateTimeZone(date_default_timezone_get());
     }
     else {
       // This is a DATE-TIME property.
       $date_string = iCalUtilityFunctions::_format_date_time($property['value']);
-
-      if (isset($property['value']['tz'])) {
-        // Z == Zulu == UTC. DateTimeZone won't acept Z, so change it to UTC.
-        if (strtoupper($property['value']['tz']) == 'Z') {
-          $property['value']['tz'] = 'UTC';
-        }
-        // Allow modules to alter the timezone string before it gets converted
-        // into a DateTimeZone.
-        $context = array(
-          'property_key' => $property_key,
-          'calendar_component' => $vcalendar_component,
-          'calendar' => $this->calendar,
-          'feeeds_source' => $this->source,
-          'feeds_fetcher_result' => $this->fetcher_result,
-        );
-        drupal_alter('date_ical_import_timezone', $property['value']['tz'], $context);
-
-        $datetimezone = $this->_tzid_to_datetimezone($property['value']['tz']);
+      
+      // Allow modules to alter the timezone string. This also allows for
+      // setting a TZID when one was not originally set for this property.
+      $tzid = isset($property['params']['TZID']) ? $property['params']['TZID'] : NULL;
+      $context = array(
+        'property_key' => $property_key,
+        'calendar_component' => $vcalendar_component,
+        'calendar' => $this->calendar,
+        'feeeds_source' => $this->source,
+        'feeds_fetcher_result' => $this->fetcherResult,
+      );
+      drupal_alter('date_ical_import_timezone', $tzid, $context);
+      
+      if (isset($tzid)) {
+        $datetimezone = $this->_tzid_to_datetimezone($tzid);
       }
       else if (isset($this->xtimezone)) {
         // No timezone was set on the parsed date property, so if a timezone
         // was detected for the entire iCal feed, use it.
         $datetimezone = $this->xtimezone;
       }
-      else if (count($this->timezones) == 1) {
-        // There is exactly one VTIMEZONE in this feed, this date field doesn't
-        // specify a timezone, and there's no X-WR-TIMEZONE. The best we can do
-        // is assume this field should use the sole available TZID.
-        $datetimezone = $this->_tzid_to_datetimezone($this->timezones[0]->getProperty('TZID'));
-      }
       else {
-        drupal_set_message(t('No timezone detected for the @key property of the event with UID %uid. Falling back to UTC.',
-        array('%uid' => $uid, '@key' => $property_key)), 'warning');
-        $datetimezone = new DateTimeZone('UTC');
+        $msg = t('No timezone was detected for one or more of the events in this feed, forcing Date iCal to use this server\'s timezone as a fallback.<br>
+            To make timezone-less events use a different timezone, implement hook_date_ical_import_timezone_alter() in a custom module.');
+        drupal_set_message($msg, 'status', FALSE);
+        $this->source->log('parse', $msg, array(), WATCHDOG_NOTICE);
+        $datetimezone = new DateTimeZone(date_default_timezone_get());
       }
-    }
-
-    // NOTE TO MAINTAINERS: This is why DTSTART *must* be parsed first!
-    // If DTEND is parsed first, this block will have no effect.
-    if ($property_key == 'DTSTART' && $dtend === FALSE && $duration !== FALSE) {
-      // In order to call $vcalendar_component->setDtend() correctly for both
-      // DATE and DATE-TIME values, we need to build this dummy array first.
-      $new_dtend = array(
-        'year'  => NULL,
-        'month' => NULL,
-        'day'   => NULL,
-        'hour'  => NULL,
-        'min'   => NULL,
-        'sec'   => NULL,
-        'tz'    => NULL,
-        'params' => $property['params'],
-      );
-      // If this component has no DTEND, but it does have a DURATION, set
-      // DTEND = DTSTART + DURATION.
-      $new_dtend = array_merge($new_dtend, iCalUtilityFunctions::_duration2date($property['value'], $duration['value']));
-      call_user_func_array(array($vcalendar_component, 'setDtend'), $new_dtend);
     }
 
     return new FeedsDateTime($date_string, $datetimezone);
@@ -299,11 +335,11 @@ class ParserVcalendar {
     if (count($vcalendar_component->rrule) > 1) {
       drupal_set_message(t('The event with UID %uid has multiple RRULEs, but the Date Repeat module only supports one. Only the first RRULE in the event will be used.<br>
           If your events need to have a complex repeat pattern, using RDATEs should help.',
-          array('%uid' => $vcalendar_component->getProperty('UID'))), 'warning'
-              );
-              // Date Repeat will get extremely confused if it's sent multiple RRULE
-              // values, so we need to manually pare it down to only the first one.
-              $vcalendar_component->rrule = array($vcalendar_component->rrule[0]);
+        array('%uid' => $vcalendar_component->getProperty('UID'))), 'warning'
+      );
+      // Date Repeat will get extremely confused if it's sent multiple RRULE
+      // values, so we need to manually pare it down to only the first one.
+      $vcalendar_component->rrule = array($vcalendar_component->rrule[0]);
     }
     foreach ($vcalendar_component->rrule as $ndx => &$rrule_data) {
       // RRULEs must have an INTERVAL, or Date Repeat will throw errors.
@@ -339,7 +375,7 @@ class ParserVcalendar {
       );
       $this->source->log('parse', $msg, array(), WATCHDOG_WARNING);
       drupal_set_message($msg, 'warning', FALSE);
-      $datetimezone = new DateTimeZone("UTC");
+      $datetimezone = new DateTimeZone('UTC');
     }
     return $datetimezone;
   }

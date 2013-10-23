@@ -2,9 +2,7 @@
 
 /**
  * @file
- *   Classes implementing Date iCal's iCalcreator-based parser functionality.
- *
- * @TODO: Figure out how to parse VVENUE information.
+ *   DateiCalFeedsParser is Date iCal's Feeds parser plugin.
  */
 
 class DateiCalFeedsParser extends FeedsParser {
@@ -23,6 +21,7 @@ class DateiCalFeedsParser extends FeedsParser {
     if (!libraries_load('iCalcreator')) {
       throw new DateIcalException(t('Unable to load the iCalcreator library. Please ensure that you have installed the library correctly.'));
     }
+    $state = $source->state(FEEDS_PARSE);
     
     // Read the iCal feed into memory.
     $ical_feed_contents = $fetcher_result->getRaw();
@@ -44,16 +43,28 @@ class DateiCalFeedsParser extends FeedsParser {
     
     // We've got a vcalendar object created from the feed data. Now we need to
     // convert that vcalendar into an array of Feeds-compatible data arrays.
-    // ParserVcalendar does this conversion.
+    // ParserVcalendar->parse() does that.
     require_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'date_ical') . '/libraries/ParserVcalendar.inc');
-    $source_config = $source->getConfigFor($this);
-    $parser = new ParserVcalendar($calendar, $source, $fetcher_result, $source_config);
-    return new FeedsParserResult($parser->parse());
+    $parser = new ParserVcalendar($calendar, $source, $fetcher_result, $source->getConfigFor($this));
+    
+    // Using either the stored progress pointer (or 0 if it's not set),
+    // determine which section of the feed to parse, then parse it.
+    $offset = isset($state->pointer) ? $state->pointer : 0;
+    $limit = $source->importer->getLimit();
+    $rows = $parser->parse($offset, $limit);
+    
+    // Report progress.
+    $state->total = $parser->getTotalComponents();
+    // We need to add 1 to the index of the last parsed componenent so that
+    // the subsequent batch starts on the *next* component.
+    $state->pointer = $parser->getLastComponentParsed() + 1;
+    $state->progress($state->total, $state->pointer);
+    
+    return new FeedsParserResult($rows);
   }
   
   /**
-   * Define our default configuration settings for when the user performs an
-   * import.
+   * Defines the default configuration settings for an actual import.
    */
   public function sourceDefaults() {
     return array(
@@ -62,8 +73,7 @@ class DateiCalFeedsParser extends FeedsParser {
   }
   
   /**
-   * Define our default configuration settings for when the user visits the
-   * config page.
+   * Defines the default settings shown on the configuration form.
    */
   public function configDefaults() {
     return array(
@@ -72,7 +82,7 @@ class DateiCalFeedsParser extends FeedsParser {
   }
   
   /**
-   * Build configuration form.
+   * Builds the configuration form.
    */
   public function configForm(&$form_state) {
     $form = array();
@@ -97,10 +107,6 @@ class DateiCalFeedsParser extends FeedsParser {
    * @return array
    */
   public static function getiCalMappingSources() {
-    // NOTE TO MAINTAINERS:
-    // The order of these properties determines their parse order! Since we
-    // need to parse the DTSTART property before parsing DTEND, the DTSTART
-    // source *must* come before it in this function.
     $sources = array();
     $sources['SUMMARY'] = array(
       'name' => t('Summary/Title'),

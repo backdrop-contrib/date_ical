@@ -178,10 +178,12 @@ function hook_date_ical_import_component_alter(&$component, $context) {
  * Alter the timezone string from an imported iCal Feed.
  *
  * This is useful for when an iCal feed you're trying to import uses deprecated
- * timezone names, like "Eastern Standard Time" rather than "America/New_York".
+ * timezone names, like "Eastern Standard Time" rather than "America/New_York",
+ * or has date values with missing timezone information.
  *
  * @param string $tzid
  *   The timezone id sting to be altered (e.g. "America/Los_Angeles").
+ *   If this value is NULL, not timezone id was set in the feed.
  * @param array $context
  *   An associative array of context, with the following keys and values:
  *   - 'property_key': The name of the property (e.g. DTSTART). Can be NULL.

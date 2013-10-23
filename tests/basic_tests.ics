@@ -120,7 +120,7 @@ BEGIN:VEVENT
 SUMMARY:Event with escaped characters in DESCRIPTION
 DTSTART;TZID=America/New_York:20131009T190000
 DTEND;TZID=America/New_York:20131009T210000
-UID:date_ical_basic_test0B
+UID:date_ical_basic_test0C
 DESCRIPTION:This event has several escaped characters right here:\,\;\\\n\NThis text should be 2 lines down from the rest.
 END:VEVENT
 

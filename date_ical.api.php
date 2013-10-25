@@ -49,8 +49,7 @@ function hook_date_ical_export_html_alter(&$text_fields, $view, $context) {
  * Modify an event's raw data.
  *
  * This hook is invoked after Date iCal has gathered all the data it will use
- * to build an event object. Use this hook to set values of iCal fields which
- * Date iCal doesn't directly support.
+ * to build an event object.
  *
  * @param array $event
  *   A reference to an associative array containing the event's raw data.
@@ -91,8 +90,8 @@ function hook_date_ical_export_raw_event_alter(&$event, $view, $context) {
  * Alter an iCal representation of an event.
  *
  * This hook allows you to modify an event as it is added to the iCal calendar.
- * If Date iCal doesn't support an iCal property that you need to use, then you
- * can add it to the event here.
+ * If Date iCal doesn't support an iCal property that you want your feed to
+ * include, you can add it to the event using this hook.
  *
  * @param object $vevent
  *   A reference to an iCalcreator vevent which will be exported in this feed.
@@ -149,7 +148,7 @@ function hook_date_ical_export_post_render_alter(&$rendered_calendar, $view) {
  *   - 'source' FeedsSource object for this Feed.
  *   - 'fetcher_result': The FeedsFetcherResult object for this Feed.
  */
-function hook_date_ical_import_calendar_alter(&$calendar, $context) {
+function hook_date_ical_import_vcalendar_alter(&$calendar, $context) {
   
 }
 

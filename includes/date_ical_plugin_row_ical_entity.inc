@@ -333,7 +333,7 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
     
     // According to the iCal standard, CREATED and LAST-MODIFIED must be UTC.
     // Fortunately, Drupal stores timestamps in the DB as UTC, so we just need
-    // to tell Date to treat the timestamp as UTC from the start.
+    // to tell DateObject to treat the timestamp as UTC from the start.
     if (isset($entity->created)) {
       $event['created'] = new DateObject($entity->created, 'UTC');
     }

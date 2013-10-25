@@ -138,22 +138,19 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       $vcalendar = new vcalendar($config);
       $vcalendar->setMethod('PUBLISH');
       
-      // If the iCal Calendar Name has been set in the Feed Style options, it's used as the
-      // title in the iCal feed. If not, the View Title is used. If that is also blank, then
-      // the Site Name is used.
-      $cal_name = $this->_get_option('cal_name');
-      if (empty($cal_name)) {
-        $view_title = $this->view->get_title();
-        if (!empty($view_title)) {
-          $cal_name = $view_title;
-        }
-        else {
-          $cal_name = variable_get('site_name', 'Drupal');
-        }
-      }
-      // Only include the X-WR-CALNAME property if the user didn't check "Exclude Calendar Name".
+      // Only include the X-WR-CALNAME property if the user didn't enable
+      // the "Exclude Calendar Name" option.
       if (!$this->_get_option('no_calname')) {
-        $vcalendar->setProperty('x-wr-calname', $cal_name, array('VALUE' => 'TEXT'));
+        $cal_name = $this->_get_option('cal_name');
+        if (empty($cal_name)) {
+          $cal_name = $this->view->get_title();
+          if (empty($cal_name)) {
+            $cal_name = variable_get('site_name', 'Drupal');
+          }
+        }
+        if (!empty($cal_name)) {
+          $vcalendar->setProperty('X-WR-CALNAME', $cal_name, array('VALUE' => 'TEXT'));
+        }
       }
       
       // Now add the VEVENTs.
@@ -167,6 +164,9 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
         }
         
         $vevent = $vcalendar->newComponent('vevent');
+        $vevent->setUid($event['uid']);
+        $vevent->setSummary($event['summary']);
+        
         // Get the start date as an array.
         $start = $event['start']->toArray();
         $start_timezone = $event['start']->getTimezone()->getName();
@@ -215,8 +215,6 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
           }
           $end['tz'] = $event['end']->getTimezone();
         }
-        $vevent->setProperty('uid', $event['uid']);
-        $vevent->setProperty('summary', $event['summary']);
         
         // Handle repeating dates from the date_repeat module.
         if (!empty($event['rrule']) && module_exists('date_repeat')) {
@@ -311,10 +309,10 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
           $vevent->setUrl($event['url'], array('type' => 'URI'));
         }
         if (!empty($event['location'])) {
-          $vevent->setProperty('location', $event['location']);
+          $vevent->setLocation($event['location']);
         }
         if (!empty($event['description'])) {
-          $vevent->setProperty('description', $event['description']);
+          $vevent->setDescription($event['description']);
         }
         if (!empty($event['last-modified'])) {
           $lm = $event['last-modified']->toArray();
@@ -356,10 +354,10 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       drupal_alter('date_ical_export_vcalendar', $vcalendar, $this->view);
       
       $output = $vcalendar->createCalendar();
-      // iCalcreator escapes all commas and semicolons in the strings that it,
-      // as the spec demands. However, some calendar clients are buggy and
-      // don't unescape these characters. Users may choose to unescape them
-      // here to sidestep those clients' bugs.
+      // iCalcreator escapes all commas and semicolons in string values, as the
+      // spec demands. However, some calendar clients are buggy and fail to
+      // unescape these characters. Users may choose to unescape them here to
+      // sidestep those clients' bugs.
       // NOTE: This results in a non-compliant iCal feed, but it seems like a
       // LOT of major clients are bugged this way.
       if ($this->_get_option('unescape_punctuation')) {
@@ -396,7 +394,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       // need to manually instruct browsers to download a .ics file.
       if (!variable_get('clean_url', FALSE)) {
         $path_array = explode('/', $this->display->display_options['path']);
-        $filename = array_pop($path_array);
+        $filename = end($path_array);
         drupal_add_http_header('Content-Disposition', "attachment; filename=\"$filename\"");
       }
     }
@@ -430,8 +428,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       if (strtoupper($key) == 'BYDAY') {
         $new_byday = array();
         foreach ($value as $day) {
-          // Fortunately, the weekday values are always 2 characters, so it's easy to
-          // split off the ordwk part, even though it could be 1 or 2 characters.
+          // Fortunately, the weekday values are always 2 characters.
           $weekday = substr($day, -2);
           $ordwk = substr($day, 0, -2);
           $new_byday[] = array($ordwk, 'DAY' => $weekday);

@@ -34,15 +34,13 @@ class ParserVcalendar {
    * Parses the vcalendar object into an array of event data arrays.
    *
    * @param int $offset
-   *   This parameter, along with $limit, specfy which section of the feed
-   *   to parse. Useful for batch operation.
+   *   Specifies which section of the feed to start parsing at.
    *
    * @param int $limit
-   *   This parameter, along with $offset, specfy which section of the feed
-   *   to parse. Useful for batch operation.
+   *   Specifies how many components to parse on this run.
    *
    * @return array
-   *   An array of parsed event data keyed by the same property keys as
+   *   An array of parsed event data keyed by the same strings as the array
    *   returned by DateiCalFeedsParser::getiCalMappingSources().
    */
   public function parse($offset, $limit) {
@@ -103,7 +101,7 @@ class ParserVcalendar {
       $events[] = $parsed_component;
       // The indices of the original $raw_components array are preserved in
       // $batch, so using the $ndx value here lets us communicate our progress
-      // through the full collection of commpenents.
+      // through the full collection of components.
       $this->lastComponentParsed = $ndx;
     }
     
@@ -166,7 +164,7 @@ class ParserVcalendar {
     $dtend = $vcalendar_component->getProperty('DTEND', FALSE, TRUE);
     $uid = $vcalendar_component->getProperty('UID');
     
-    // DATE-type values are treated as All Day events which can span over
+    // DATE-type properties are treated as All Day events which can span over
     // multiple days.
     // The Date module's All Day event handling was never finalized
     // (http://drupal.org/node/874322), which requires us to do some some

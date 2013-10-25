@@ -39,7 +39,7 @@ class DateiCalFeedsParser extends FeedsParser {
       'source' => $source,
       'fetcher_result' => $fetcher_result,
     );
-    drupal_alter('date_ical_import_calendar', $calendar, $context);
+    drupal_alter('date_ical_import_vcalendar', $calendar, $context);
     
     // We've got a vcalendar object created from the feed data. Now we need to
     // convert that vcalendar into an array of Feeds-compatible data arrays.
@@ -47,7 +47,7 @@ class DateiCalFeedsParser extends FeedsParser {
     require_once(DRUPAL_ROOT . '/' . drupal_get_path('module', 'date_ical') . '/libraries/ParserVcalendar.inc');
     $parser = new ParserVcalendar($calendar, $source, $fetcher_result, $source->getConfigFor($this));
     
-    // Using either the stored progress pointer (or 0 if it's not set),
+    // Using the stored progress pointer (or 0 if it's not set),
     // determine which section of the feed to parse, then parse it.
     $offset = isset($state->pointer) ? $state->pointer : 0;
     $limit = $source->importer->getLimit();
@@ -56,7 +56,7 @@ class DateiCalFeedsParser extends FeedsParser {
     // Report progress.
     $state->total = $parser->getTotalComponents();
     // We need to add 1 to the index of the last parsed componenent so that
-    // the subsequent batch starts on the *next* component.
+    // the subsequent batch starts on the first unparsed component.
     $state->pointer = $parser->getLastComponentParsed() + 1;
     $state->progress($state->total, $state->pointer);
     

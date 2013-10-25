@@ -1,10 +1,11 @@
 Date iCal
 
-This module allows users to create iCal feeds in Views, and import iCal feeds
-from other sites using the Feeds module. Any entity can act as the source of
+This module allows users to export iCal feeds with Views, and import iCal feeds
+from other sites with the Feeds module. Any entity can act as the source of
 events for an iCal feed, as long as that entity contains a Date field. Date 
 iCal creates a new iCal "view mode" for all entities, which is used to format
-the Description field of the events in the iCal feed.
+the Description field of the events in the iCal feed (when using the iCal 
+Entity plugin).
 
 For an easier-to-read HTML version of these instructions, please go to 
 http://www.drupal.org/project/date_ical and click the "Read documentation" link
@@ -13,7 +14,8 @@ in the Resources section of the right sidebar.
 INSTALLATION
 
 Date iCal has several required dependencies, and an optional one: 
-- The Views, Entity API, Libraries API (version 2.0), and Date modules are required.
+- The Views (version 3.5+), Entity API, Libraries API (version 2.0), and Date 
+    modules are required.
 - The iCalcreator library is required.
 - PHP 5.3 is required by the iCalcreator library to properly handle timezone
     data. Date iCal *might* work with PHP 5.2, but that configuration is 
@@ -36,15 +38,17 @@ Performance and click the "Clear all caches" button. This is necessary because
 libraries are cached, and you may see confusing behavior from Date iCal if the
 iCalcreator library gets cached at a bad time.
 
-
 To confirm that iCalcreator is installed correctly, log in to your Drupal site
 and navigate to the admin/reports/status page. If the row titled "Date iCal" is
 green, Date iCal is ready to go. If it's red, the iCalcreator library is not
 properly installed. If it's missing, you'll need to enable Date iCal and then 
 come back to this page. 
 
+EXPORTING AN ICAL FEED USING Views
+There are two plugins that export iCal feeds. You can use either one, though
+the iCal Fields plugin is a bit more versatile.
 
-HOW TO CREATE AN ICAL FEED (using the iCal Entities plugin)
+HOW TO EXPORT AN ICAL FEED USING THE iCal Entities PLUGIN
 
 1.  Go to the Manage Display page for the content type you want to export in an 
     iCal feed. On the "Default" tab, check the box for "iCal" in the section 
@@ -89,7 +93,7 @@ HOW TO CREATE AN ICAL FEED (using the iCal Entities plugin)
     download a .ics file with the events, instead of loading the events directly 
     into a calendar app.
 
-HOW TO CREATE AN ICAL FEED (using the iCal Fields plugin)
+HOW TO EXPORT AN ICAL FEED USING THE iCal Fields PLUGIN
 1-6.These steps are the same as above.
 7.  Add views fields for each piece of information that you want to populate your
     iCal feed with. A Date field is required, and fields that will act as the 
@@ -101,9 +105,9 @@ HOW TO CREATE AN ICAL FEED (using the iCal Fields plugin)
 10+ These steps are the same as above. 
 
 
-HOW TO IMPORT AN ICAL FEED FROM ANOTHER SITE
-- Install the Feeds module, which acts as the framework around Date iCal's 
-  calendar import functionality.
+IMPORTING ICAL FEEDS FROM ANOTHER SITE USING Feeds
+- Install the Feeds module, which is the framework upon which Date iCal's 
+  import functionality is built.
 - Login to your Drupal site and navigate to the admin/structure/feeds page.
 - Click the "Add importer" link, and give it a name and description.
 - Clicking "Create" will bring you to the general Feeds importer settings page.
@@ -122,19 +126,16 @@ HOW TO IMPORT AN ICAL FEED FROM ANOTHER SITE
 - Now click the "Mapping" link at the bottom of the left sidebar. This page is
   where you'll define how iCal event properties get mapped into your nodes'
   fields. Expand the "Legend" for a detailed description of each source and
-  target field. Sources are the attributes available in iCal event objects.
-  Targets are the fields in your nodes.
+  target field. Sources are the attributes available in iCal event objects, 
+  and Targets are the fields in your nodes.
 - Most of this setup is going to be dependant upon how your content type's 
   fields are configured, but there are some universal requirements:
-  1) You must map the "UID" source to the "GUID" target. Then, after clicking
+  1) You MUST map the "UID" source to the "GUID" target. Then, after clicking
      "Add", click the gear-shaped button that appears in the new table row, 
      and check the "Unique" checkbox. Then click "Update", and then before
      you add any more mappings, click "Save" at the bottom of the page.
-  2) If you're going to map both the "Date start" and "Date end" sources, you
-     MUST ensure that the "Date start" mapping is above the "Date end" mapping
-     in the table. This is because of an implementation detail in the parser. 
-  3) It's a good idea to map the "Summary" source to the "Title" target, and
-     the "Description" source to whatever field is the "body" of the node.
+  3) It's a good idea to map the "Summary/Title" source to the "Title" target,
+     and the "Description" source to whatever field is the "body" of the node.
 - Once you've completed all the mappings, click the "Save" button on the 
   bottom left side of the page.
 - Now you can import the iCal feed into nodes by going to the /import page of
@@ -146,18 +147,24 @@ HOW TO IMPORT AN ICAL FEED FROM ANOTHER SITE
   you do, you've successfully set up your iCal importer. If you get some other
   message, you'll need to tweak the importer's settings. 
 
+Remember, you have to map the UID source to the GUID target, and make it 
+unique, or your imports won't work!
 
 
 Additional Notes:
 The Feeds plugin was originally written by ekes, for the "iCal feed parser"
 module (http://www.drupal.org/project/parser_ical). It was modified and 
-improved for Date iCal by coredumperror.
+improved for Date iCal by coredumperror. In Date iCal 3.0, the plugin was
+re-written from scratch to conform to the Feeds APIs.
 
 At this time, Date iCal supports outputting iCal calendars only through Views.
 To put an "Add to calendar" button on individual event nodes, try the 
 <a href="http://drupal.org/project/addtocal">Add to Cal</a> module, or follow
 the instructions created by the estimable nmc at:
 http://nmc-codes.blogspot.ca/2012/11/creating-ical-feed-for-single-node-in.html
+
+The Feeds Tamper module is quite useful for manipulating the data in imported
+iCal feeds.
 
 Developers who wish to implement more powerful manipulation of event data can
 read the date_ical.api.php file to learn about the various alter hooks that 

@@ -7,22 +7,23 @@
 
 /**
  * The version number of the current release. This is inserted into the PRODID
- * value of the iCal feeds created by Date iCal.
+ * value of the iCal feeds created by Date iCal. It's primarily used for
+ * debugging.
  */
 define('DATE_ICAL_VERSION', '3.0-dev');
 
 /**
- * Exception for when the date field for a row in the ical_fields row plugin is blank.
- */
-class BlankDateFieldException extends Exception { }
-
-/**
- * Generic DateIcalFeedsParser exceptions.
+ * Exception class for generic exceptions thrown by this module.
  */
 class DateIcalException extends Exception {}
 
 /**
- * DateIcalFeedsParser failed to parse some part of iCal.
+ * Exception for when the date field for a row in the ical_fields row plugin is blank.
+ */
+class BlankDateFieldException extends DateIcalException {}
+
+/**
+ * Exception thrown when the Feeds parser plugin fails.
  */
 class DateIcalParseException extends DateIcalException {}
 
@@ -50,26 +51,6 @@ function date_ical_views_api() {
 function date_ical_feeds_plugins() {
   $path = drupal_get_path('module', 'date_ical') . '/includes';
   $info = array();
-  $info['DateIcalFeedsParserOld'] = array(
-    'hidden' => TRUE,
-    'handler' => array(
-      'parent' => 'FeedsParser',
-      'class' => 'DateIcalFeedsParserOld',
-      'file' => 'DateIcalFeedsParserOld.inc',
-      'path' => $path,
-    ),
-  );
-  $info['DateIcalIcalcreatorParser'] = array(
-    'name' => 'iCal parser (old)',
-    'description' => t('Use the iCalcreator library to parse iCal feeds.'),
-    'help' => 'Parse iCal feeds.',
-    'handler' => array(
-      'parent' => 'DateIcalFeedsParserOld',
-      'class' => 'DateIcalIcalcreatorParser',
-      'file' => 'DateIcalIcalcreatorParser.inc',
-      'path' => $path,
-    ),
-  );
   $info['DateiCalFeedsParser'] = array(
     'name' => 'iCal parser',
     'description' => t('Parse iCal feeds.'),

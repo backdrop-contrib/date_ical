@@ -1,5 +1,5 @@
 name = Date iCal
-description = Enables users to export iCal feeds using Views, and import iCal feeds using Feeds.
+description = Enables export of iCal feeds using Views, and import of iCal feeds using Feeds.
 package = Date/Time
 php = 5.3
 core = 7.x
@@ -10,7 +10,7 @@ dependencies[] = libraries (>=7.x-2.0)
 dependencies[] = date
 dependencies[] = date_api
 
-; Date iCal doesn't actually depend on Feeds, but it's iCal import functionality won't be usable without it.
+; Date iCal doesn't actually depend on Feeds, but its iCal import functionality won't be usable without it.
 ;dependencies[] = feeds
 
 ; Includes for iCal feed export using Views
@@ -20,5 +20,3 @@ files[] = includes/date_ical_plugin_style_ical_feed.inc
 
 ; Includes for iCal feed import using Feeds
 files[] = includes/DateIcalFeedsParser.inc
-files[] = includes/DateIcalFeedsParserOld.inc
-files[] = includes/DateIcalIcalcreatorParser.inc

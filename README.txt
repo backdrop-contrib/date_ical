@@ -150,6 +150,15 @@ IMPORTING ICAL FEEDS FROM ANOTHER SITE USING Feeds
 Remember, you have to map the UID source to the GUID target, and make it 
 unique, or your imports won't work!
 
+IMPORTANT NOTE:
+If you're building a site that will be viewed by out-of-state users, and you
+allow said users to set their own timezone, you'll want to set up your Date
+fields to use the "Date's time zone" option. If you don't, then users who live
+in a different timezone will be shown the times for your events in their local
+timezone, rather than your events' timezone. This makes sense if your events
+will be broadcast live to these out-of-state users, but if they need to travel
+to your event, they may end up arriving at the wrong time.
+
 
 Additional Notes:
 The Feeds plugin was originally written by ekes, for the "iCal feed parser"
@@ -157,7 +166,7 @@ module (http://www.drupal.org/project/parser_ical). It was modified and
 improved for Date iCal by coredumperror. In Date iCal 3.0, the plugin was
 re-written from scratch to conform to the Feeds APIs.
 
-At this time, Date iCal supports outputting iCal calendars only through Views.
+At this time, Date iCal only supports outputting iCal calendars through Views.
 To put an "Add to calendar" button on individual event nodes, try the 
 <a href="http://drupal.org/project/addtocal">Add to Cal</a> module, or follow
 the instructions created by the estimable nmc at:

@@ -68,13 +68,23 @@ function date_ical_update_7300() {
   $importer_data = ctools_export_load_object('feeds_importer', 'all');
   foreach ($importer_data as $key => $value) {
     $importer = feeds_importer($key);
-    $config = $importer->getConfig();
-    if ($config['parser']['plugin_key'] == 'DateIcalIcalcreatorParser') {
+    $importer_config = $importer->getConfig();
+    $needs_update = ($importer_config['parser']['plugin_key'] == 'DateIcalIcalcreatorParser');
+    
+    $processor = $importer->processor;
+    $processor_config = $processor->getconfig();
+    // Also update importers which use the new parser, but have un-capitalized
+    // sources. This can happen if the user didn't run the update, and then
+    // manually fixed the warning they saw, without fixing their sources.
+    if ($importer_config['parser']['plugin_key'] == 'DateiCalFeedsParser'
+        && !empty($processor_config['mappings'][0]['source'])) {
+      $needs_update = (strtoupper($processor_config['mappings'][0]['source']) != $processor_config['mappings'][0]['source']);
+    }
+    
+    if ($needs_update) {
       $importer->setPlugin('DateiCalFeedsParser');
       
-      // Update the mappings: the source keys are now capitalized.
-      $processor = $importer->processor;
-      $processor_config = $processor->getconfig();
+      // Source keys are now capitalized, so we need to update the mappings.
       foreach ($processor_config['mappings'] as &$mapping) {
         $mapping['source'] = strtoupper($mapping['source']);
       }

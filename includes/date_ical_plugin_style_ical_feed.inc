@@ -116,8 +116,9 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
     $events = array();
     foreach ($this->view->result as $row_index => $row) {
       $this->view->row_index = $row_index;
+      $row->index = $row_index;
       try {
-        $events[] = $this->row_plugin->render($row, $row_index);
+        $events[] = $this->row_plugin->render($row);
       }
       catch (Exception $e) {
         debug($e->getMessage(), NULL, TRUE);

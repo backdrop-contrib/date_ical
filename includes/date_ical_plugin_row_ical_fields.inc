@@ -23,23 +23,22 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
   
   function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
-    $blank_label = array('' => t('- None -'));
     $all_field_labels = $this->display->handler->get_field_labels();
     $date_field_labels = $this->get_date_field_candidates($all_field_labels);
-    $date_field_label_options = array_merge($blank_label, $date_field_labels);
-    $text_field_label_options = array_merge($blank_label, $all_field_labels);
+    $date_field_label_options = array_merge(array('first_available' => t('First populated Date field')), $date_field_labels);
+    $text_field_label_options = array_merge(array('' => t('- None -')), $all_field_labels);
     
     $form['instructions'] = array(
       // The surrounding <div> is necessary to ensure that the settings dialog expands to show everything.
       '#prefix' => '<div style="font-size: 90%">',
       '#suffix' => '</div>',
-      '#markup' => t("Before applying these settings, this view will need to be configured to load the fields you wish to map into the events in your iCal feed.
-        If you have no fields to choose, you may want to click the X button in the upper-right to close this dialog."),
+      '#markup' => t("Once you've finished setting up the fields for this View, you may want to return to this dialog to set the Date field."),
     );
     $form['date_field'] = array(
       '#type' => 'select',
       '#title' => t('Date field'),
-      '#description' => t('The views field to use as the start (and possibly end) time for each event (DTSTART/DTEND).'),
+      '#description' => t('The views field to use as the start (and possibly end) time for each event (DTSTART/DTEND).
+        If you retain the default ("First populated Date field"), Date iCal will use the first non-empty Date field in the row.'),
       '#options' => $date_field_label_options,
       '#default_value' => $this->options['date_field'],
       '#required' => TRUE,
@@ -96,23 +95,41 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
   }
   
   /**
-   * Returns an Event array based on the query result from the view whose index is
-   * specified in the (hidden) second parameter of this function.
+   * Returns an Event array based on the query result from the view whose
+   * index is $row->index.
    */
   function render($row) {
-    // Using func_get_args() instead of declaring $row_index in the arguments,
-    // because this function must be compatible with views_plugin_row::render().
-    $args = func_get_args();
-    $row_index = $args[1];
     $date_field_name = $this->options['date_field'];
+    
+    // If this view is set to use the first populated date field, check each
+    // field in the row to find the first non-NULL Date field.
+    if ($date_field_name == 'first_available') {
+      foreach (get_object_vars($row) as $name => $value) {
+        if (strpos($name, 'field_field') === 0) {
+          // This property's name starts with "field_field", which means it's
+          // the actual field data for a field in this view.
+          if (!empty($value[0]['raw']['date_type'])) {
+            // Cut off the first "field_" from $name to get the field name.
+            $date_field_name = substr($name, 6);
+            break;
+          }
+        }
+      }
+    }
     
     // Fetch the event's date information.
     try {
-      $date = $this->get_row_date($row_index);
+      if ($date_field_name == 'first_available') {
+        // If $date_field_name is still 'first_available' at this point, we
+        // couldn't find an available Date value. Processing cannot proceed.
+        $title = strip_tags($this->view->style_plugin->get_field($row->index, $this->options['title_field']));
+        throw new BlankDateFieldException(t("The row %title has no available Date value. An iCal entry cannot be created for it.", array('%title' => $title)));
+      }
+      $date = $this->get_row_date($row, $date_field_name);
     }
     catch (BlankDateFieldException $e) {
-      // Unless the user has specifically said that they want to skip rows which
-      // have blank dates, let this exception percolate.
+      // Unless the user has specifically said that they want to skip rows
+      // with blank dates, let this exception percolate.
       if ($this->options['additional_settings']['skip_blank_dates']) {
         return NULL;
       }
@@ -124,12 +141,12 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     // Create the event by starting with the date array from this row.
     $event = $date;
     
+    $entity = $row->_field_data[$this->view->base_field]['entity'];
+    $entity_type = $row->_field_data[$this->view->base_field]['entity_type'];
     // Add the CREATED, LAST-MODIFIED, and URL components based on the entity.
     // According to the iCal standard, CREATED and LAST-MODIFIED must be UTC.
     // Fortunately, Drupal stores timestamps in the DB as UTC, so we just need
     // to specify that UTC be used rather than the server's local timezone.
-    $entity = $row->_field_data[$this->view->base_field]['entity'];
-    $entity_type = $row->_field_data[$this->view->base_field]['entity_type'];
     if (isset($entity->created)) {
       $event['created'] = new DateObject($entity->created, 'UTC');
     }
@@ -182,16 +199,16 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     }
     
     // Retrieve the rendered text fields.
-    $text_fields['summary'] = $this->get_field($row_index, $this->options['title_field']);
-    $text_fields['description'] = $this->get_field($row_index, $this->options['description_field']);
-    $text_fields['location'] = $this->get_field($row_index, $this->options['location_field']);
+    $text_fields['summary'] = $this->get_field($row->index, $this->options['title_field']);
+    $text_fields['description'] = $this->get_field($row->index, $this->options['description_field']);
+    $text_fields['location'] = $this->get_field($row->index, $this->options['location_field']);
     
     // Allow other modules to alter the rendered text fields before they get
     // sanitized for iCal-compliance. This is most useful for fields of type
     // "Content: Rendered Node", which are likely to have complex HTML.
     $context = array(
       'row' => $row,
-      'row_index' => $row_index,
+      'row_index' => $row->index,
       'language' => $this->language,
       'options' => $this->options,
     );
@@ -216,13 +233,13 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
    *
    * @param object $row
    *   The current row object.
-   * @param int $row_index
-   *   The current row index.
+   * @param string $date_field_name
+   *   The name of the date field.
    *
    * @return array
    *   The normalized array.
   */
-  function get_row_date($row_index) {
+  function get_row_date($row, $date_field_name) {
     $start = NULL;
     $end   = NULL;
     $rrule = NULL;
@@ -230,7 +247,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     $is_date_field = FALSE;
     
     // Fetch the date field value.
-    $date_field_value = $this->view->style_plugin->get_field_value($row_index, $this->options['date_field']);
+    $date_field_value = $this->view->style_plugin->get_field_value($row->index, $date_field_name);
     
     // Handle date fields.
     if (isset($date_field_value[$delta]) && is_array($date_field_value[$delta])) {
@@ -255,9 +272,9 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       $end   = new DateObject($date_field_value, 'UTC');
     }
     else {
-      // Handle rows with blank date values.
-      $title = strip_tags($this->view->style_plugin->get_field($row_index, $this->options['title_field']));
-      throw new BlankDateFieldException("The row '$title' has a blank date. An iCal entry cannot be created for it.");
+      // Processing cannot proceed with a blank date value.
+      $title = strip_tags($this->view->style_plugin->get_field($row->index, $this->options['title_field']));
+      throw new BlankDateFieldException(t("The row %title has a blank date. An iCal entry cannot be created for it.", array('%title' => $title)));
     }
     
     // Set the display timezone to whichever tz is stored for this field.
@@ -269,7 +286,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     
     $granularity = 'second';
     if ($is_date_field) {
-      $granularity_settings = $this->view->field[$this->options['date_field']]->field_info['settings']['granularity'];
+      $granularity_settings = $this->view->field[$date_field_name]->field_info['settings']['granularity'];
       $granularity = date_granularity_precision($granularity_settings);
     }
     

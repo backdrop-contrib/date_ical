@@ -110,8 +110,8 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
   /**
    * Preload the list of entities which will appear in the view.
    *
-   * @TODO: When the date is coming in through a relationship, the nid
-   * of the view is not the right node to use, then we need the related node.
+   * TODO: When the date is coming in through a relationship, the nid
+   * of the view is not the right node to use: we need the related node.
    * Need to sort out how that should be handled.
    */
   public function pre_render($values) {

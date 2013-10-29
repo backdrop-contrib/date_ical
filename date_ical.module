@@ -31,8 +31,18 @@ class DateIcalParseException extends DateIcalException {}
  * Implements hook_hook_info().
  */
 function date_ical_hook_info() {
-  // TODO: Finish this.
-  // Use two "groups": date_ical_import and date_ical_export.
+  $hooks = array(
+    'date_ical_export_html_alter',
+    'date_ical_export_raw_event_alter',
+    'date_ical_export_vevent_alter',
+    'date_ical_export_vcalendar_alter',
+    'date_ical_export_post_render_alter',
+    'date_ical_import_vcalendar_alter',
+    'date_ical_import_component_alter',
+    'date_ical_import_timezone_alter',
+  );
+
+  return array_fill_keys($hooks, array('group' => 'date_ical'));
 }
 
 /**

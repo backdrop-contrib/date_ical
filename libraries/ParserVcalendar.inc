@@ -264,7 +264,7 @@ class ParserVcalendar {
       // NOTE TO MAINTAINERS:
       // This will not work properly if the site is configured to allow users
       // to set their own timezone. Unfortunately, there isn't anything that
-      // Date iCal can do about that, as far as I can tell. -- coredumperror
+      // Date iCal can do about that, as far as I can tell.
       $datetimezone = new DateTimeZone(date_default_timezone_get());
     }
     else {
@@ -349,7 +349,7 @@ class ParserVcalendar {
       // values, so we need to manually pare it down to only the first one.
       $vcalendar_component->rrule = array($vcalendar_component->rrule[0]);
     }
-    foreach ($vcalendar_component->rrule as $ndx => &$rrule_data) {
+    foreach ($vcalendar_component->rrule as &$rrule_data) {
       // RRULEs must have an INTERVAL, or Date Repeat will throw errors.
       if (!isset($rrule_data['value']['INTERVAL'])) {
         $rrule_data['value']['INTERVAL'] = '1';

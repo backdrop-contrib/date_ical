@@ -206,7 +206,7 @@ function date_ical_feeds_processor_targets_alter(&$targets, $entity_type, $bundl
  * converted to "\n\n" and link tags converted to footnotes), and uneeded
  * whitespace will be cleaned up.
  *
- * @param $text
+ * @param string $text
  *   The text to be sanitized.
  */
 function date_ical_sanitize_text($text = '') {
@@ -244,7 +244,8 @@ function date_ical_feeds_set_rrule($source, $entity, $target, $feed_element) {
     return;
   }
   // Add the RRULE value to the field in $entity.
-  list($field_name, $trash) = explode(':', $target, 2);
+  $exploded = explode(':', $target, 2);
+  $field_name = $exploded[0];
   module_load_include('inc', 'date_api', 'date_api_ical');
   $info = field_info_field($field_name);
   foreach ($entity->{$field_name} as $lang => $field_array) {
@@ -283,7 +284,7 @@ function date_ical_get_location_fields($base = 'node', $reset = FALSE) {
  * This is a cut down version of _date_views_fields() from
  * date_views_fields.inc in date_views module.
  *
- * @return
+ * @return array
  *   array with fieldname, type, and table.
  *
  * @see date_views_date_views_fields()
@@ -367,10 +368,10 @@ function date_ical_get_summary_fields($base = 'node', $reset = FALSE) {
  * This is a cut down version of _date_views_fields() from
  * date_views_fields.inc in date_views module.
  *
- * @return
+ * @return array
  *   Array with fieldname, type, and table.
  *
- *  @see date_views_date_views_fields()
+ * @see date_views_date_views_fields()
  */
 function _date_ical_get_summary_fields($base = 'node') {
   // Make sure $base is never empty.
@@ -441,7 +442,7 @@ function _date_ical_convert_rrule_for_icalcreator($rrule) {
       continue;
     }
     if (strtoupper($key) == 'UNTIL') {
-      // iCalcreator expects the 'timestamp' to be array key for UNTIL
+      // iCalcreator expects the 'timestamp' to be array key for UNTIL.
       $value['timestamp'] = strtotime($value['datetime']);
     }
     if (strtoupper($key) == 'BYDAY') {

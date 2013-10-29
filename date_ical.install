@@ -5,6 +5,7 @@
  * Install, update and uninstall functions for the date_ical module.
  *
  */
+
 /**
  * Implements hook_requirements().
  */
@@ -41,7 +42,7 @@ function date_ical_requirements($phase) {
 }
 
 /**
- * Implementation of hook_enable().
+ * Implements of hook_enable().
  */
 function date_ical_enable() {
   cache_clear_all('plugins:feeds:plugins', 'cache');
@@ -53,6 +54,7 @@ function date_ical_enable() {
 
 /**
  * Migrates all iCal feed importers for from Date iCal 2.x to 3.0.
+ *
  * <br>
  * PLEASE NOTE: If any of your importers are defined by Features, you'll need
  * to update their feature(s) to match.
@@ -96,7 +98,7 @@ function date_ical_update_7300() {
       // parser plugin being missing. We corrected that warning above, so we
       // should clear it out to avoid potential confusion.
       $messages = drupal_get_messages('warning');
-      foreach($messages['warning'] as $warning) {
+      foreach ($messages['warning'] as $warning) {
         // Calling drupal_get_messages() removed *every* warning from the
         // message queue, so we need to re-issue any warnings that aren't
         // about missing Feeds plugins.

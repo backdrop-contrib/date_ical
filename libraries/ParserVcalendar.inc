@@ -1,5 +1,4 @@
 <?php
-
 /**
  * @file
  * Defines a class that parses iCalcreator vcalendar objects into
@@ -23,6 +22,9 @@ class ParserVcalendar {
   protected $totalComponents = 0;
   protected $lastComponentParsed = 0;
   
+  /**
+   * Constructor.
+   */
   public function __construct($calendar, $source, $fetcher_result, $config) {
     $this->calendar = $calendar;
     $this->source = $source;
@@ -69,9 +71,9 @@ class ParserVcalendar {
     
     // Collect each component, so we can batch them properly in the next loop.
     $raw_components = array();
-    $component_types = array('VEVENT', 'VTODO', 'VJOURNAL', 'VFREEBUSY', 'VALARM');
-    foreach ($component_types as $component_type) {
-      while ($vcalendar_component = $this->calendar->getComponent($component_type)) {
+    $types = array('VEVENT', 'VTODO', 'VJOURNAL', 'VFREEBUSY', 'VALARM');
+    foreach ($types as $type) {
+      while ($vcalendar_component = $this->calendar->getComponent($type)) {
         // Allow modules to alter the vcalendar component before we parse it
         // into a Feeds-compatible data array.
         $context = array(
@@ -108,10 +110,16 @@ class ParserVcalendar {
     return $events;
   }
   
+  /**
+   * Getter for the protected totalComponents property.
+   */
   public function getTotalComponents() {
     return $this->totalComponents;
   }
   
+  /**
+   * Getter for the protected lastComponentParsed property.
+   */
   public function getLastComponentParsed() {
     return $this->lastComponentParsed;
   }
@@ -120,6 +128,7 @@ class ParserVcalendar {
    * Parses text fields.
    *
    * @return string
+   *   The parsed text property.
    */
   public function parseTextProperty($property_key, $vcalendar_component) {
     $text = $vcalendar_component->getProperty($property_key);
@@ -140,6 +149,7 @@ class ParserVcalendar {
    * Parses field parameters.
    *
    * @return string
+   *   The parsed field parameter.
    */
   public function parsePropertyParameter($property_key, $vcalendar_component) {
     list($key, $attr) = explode(':', $property_key);
@@ -148,20 +158,20 @@ class ParserVcalendar {
       // If the component doesn't have this property, return NULL.
       return NULL;
     }
-    return isset($property['params'][$attr]) ? $property['params'][$attr]: '';
+    return isset($property['params'][$attr]) ? $property['params'][$attr] : '';
   }
 
   /**
-   * Parses datetime fields.
+   * Parses DATE-TIME and DATE fields.
    *
    * @return FeedsDateTime
+   *   The parsed datetime object.
    */
   public function parseDateTimeProperty($property_key, $vcalendar_component) {
     $property = $vcalendar_component->getProperty($property_key, FALSE, TRUE);
     // Gather all the other date properties, so we can work with them later.
     $duration = $vcalendar_component->getProperty('DURATION', FALSE, TRUE);
     $dtstart = $vcalendar_component->getProperty('DTSTART', FALSE, TRUE);
-    $dtend = $vcalendar_component->getProperty('DTEND', FALSE, TRUE);
     $uid = $vcalendar_component->getProperty('UID');
     
     // DATE-type properties are treated as All Day events which can span over
@@ -180,23 +190,23 @@ class ParserVcalendar {
         
         if ($duration !== FALSE) {
           // If a DURATION is defined, emulate DTEND as DTSTART + DURATION.
-          $property = $dtend = array(
+          $property = array(
             'value' => iCalUtilityFunctions::_duration2date($dtstart['value'], $duration['value']),
             'params' => $dtstart['params'],
           );
         }
-        else if ($is_all_day) {
+        elseif ($is_all_day) {
           // If this is an all-day event with no end or duration, treat this
           // as a single-day event by emulating DTEND as 1 day after DTSTART.
-          $property = $dtend = $dtstart;
-          $property['value']['day'] = $dtend['value']['day'] = $dtstart['value']['day'] + 1;
+          $property = $dtstart;
+          $property['value']['day'] = $dtstart['value']['day'] + 1;
         }
         else {
           // This event has no end date.
           return NULL;
         }
       }
-      else if ($property_key == 'DTSTART') {
+      elseif ($property_key == 'DTSTART') {
         // DTSTART can only be legally unset in non-VEVENT components.
         if ($vcalendar_component->objName == 'vevent') {
           throw new DateIcalParseException(t('Feed import failed! The VEVENT with UID %uid is invalid: it has no DTSTART.', array('%uid' => $uid)));
@@ -276,14 +286,14 @@ class ParserVcalendar {
       if (isset($tzid)) {
         $datetimezone = $this->_tzid_to_datetimezone($tzid);
       }
-      else if (isset($this->xtimezone)) {
+      elseif (isset($this->xtimezone)) {
         // No timezone was set on the parsed date property, so if a timezone
         // was detected for the entire iCal feed, use it.
         $datetimezone = $this->xtimezone;
       }
       else {
-        $msg = t('No timezone was detected for one or more of the events in this feed, forcing Date iCal to use this server\'s timezone as a fallback.<br>
-            To make timezone-less events use a different timezone, implement hook_date_ical_import_timezone_alter() in a custom module.');
+        $msg = t("No timezone was detected for one or more of the events in this feed, forcing Date iCal to use this server's timezone as a fallback.<br>
+            To make timezone-less events use a different timezone, implement hook_date_ical_import_timezone_alter() in a custom module.");
         drupal_set_message($msg, 'status', FALSE);
         $this->source->log('parse', $msg, array(), WATCHDOG_NOTICE);
         $datetimezone = new DateTimeZone(date_default_timezone_get());
@@ -346,8 +356,8 @@ class ParserVcalendar {
       }
 
       if (!isset($rrule_data['value']['COUNT']) && !isset($rrule_data['value']['UNTIL'])) {
-        drupal_set_message(t('The event with UID %uid has an indefinitely repeating RRULE, which the Date Repeat module doesn\'t support.<br>
-            As a workaround, Date iCal set the repeat count to @count. This value can be customized in the iCal parser settings.',
+        drupal_set_message(t("The event with UID %uid has an indefinitely repeating RRULE, which the Date Repeat module doesn't support.<br>
+            As a workaround, Date iCal set the repeat count to @count. This value can be customized in the iCal parser settings.",
           array('%uid' => $vcalendar_component->getProperty('UID'), '@count' => $this->config['indefinite_count'])), 'warning'
         );
         $rrule_data['value']['COUNT'] = $this->config['indefinite_count'];
@@ -360,12 +370,15 @@ class ParserVcalendar {
     return "$rrule\n$exdate\n$rdate";
   }
 
+  /**
+   * Internal helper function for creating DateTimeZone objects.
+   */
   protected function _tzid_to_datetimezone($tzid) {
     try {
       $datetimezone = new DateTimeZone($tzid);
     }
     catch (Exception $e) {
-      $link = l('here', 'http://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List', array('absolute' => TRUE));
+      $link = l(t('here'), 'http://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List', array('absolute' => TRUE));
       $msg = t(
           '"@tz" is not a valid timezone (see the TZ column !here), so Date iCal used UTC (which is probably wrong!).<br>
           Try implementing hook_date_ical_import_timezone_alter() in a custom module to fix this problem.',

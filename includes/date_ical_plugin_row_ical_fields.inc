@@ -6,12 +6,14 @@
  */
 
 /**
- * Plugin which creates a view on the resulting object
- * and formats it as an iCal VEVENT.
+ * A Views plugin which builds an iCal VEVENT from a views row with Fields.
  */
 class date_ical_plugin_row_ical_fields extends views_plugin_row {
   
-  function option_definition() {
+  /**
+   * Set up the options for the row plugin.
+   */
+  public function option_definition() {
     $options = parent::option_definition();
     $options['date_field'] = array('default' => '');
     $options['title_field'] = array('default' => '');
@@ -21,7 +23,10 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     return $options;
   }
   
-  function options_form(&$form, &$form_state) {
+  /**
+   * Build the form for setting the row plugin's options.
+   */
+  public function options_form(&$form, &$form_state) {
     parent::options_form($form, $form_state);
     $all_field_labels = $this->display->handler->get_field_labels();
     $date_field_labels = $this->get_date_field_candidates($all_field_labels);
@@ -29,7 +34,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     $text_field_label_options = array_merge(array('' => t('- None -')), $all_field_labels);
     
     $form['instructions'] = array(
-      // The surrounding <div> is necessary to ensure that the settings dialog expands to show everything.
+      // The surrounding <div> ensures that the settings dialog expands.
       '#prefix' => '<div style="font-size: 90%">',
       '#suffix' => '</div>',
       '#markup' => t("Once you've finished setting up the fields for this View, you may want to return to this dialog to set the Date field."),
@@ -84,7 +89,10 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     );
   }
   
-  function pre_render($result) {
+  /**
+   * Set up the environment for the render() function.
+   */
+  public function pre_render($result) {
     // Get the language for this view.
     $this->language = $this->display->handler->get_option('field_language');
     $substitutions = views_views_query_substitutions($this->view);
@@ -95,10 +103,9 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
   }
   
   /**
-   * Returns an Event array based on the query result from the view whose
-   * index is $row->index.
+   * Returns an Event array row in the query with index: $row->index.
    */
-  function render($row) {
+  public function render($row) {
     $date_field_name = $this->options['date_field'];
     
     // If this view is set to use the first populated date field, check each
@@ -153,7 +160,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     if (isset($entity->changed)) {
       $event['last-modified'] = new DateObject($entity->changed, 'UTC');
     }
-    else if (isset($entity->created)) {
+    elseif (isset($entity->created)) {
       // If changed is unset, but created is, use that for last-modified.
       $event['last-modified'] = new DateObject($entity->created, 'UTC');
     }
@@ -238,8 +245,8 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
    *
    * @return array
    *   The normalized array.
-  */
-  function get_row_date($row, $date_field_name) {
+   */
+  protected function get_row_date($row, $date_field_name) {
     $start = NULL;
     $end   = NULL;
     $rrule = NULL;
@@ -315,24 +322,27 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
   }
 
   /**
-   * Filter the list of views fields down to only those which are supported date-type fields.
-   * At this time, the supported date-type fields are timestamps and the three Date fields.
+   * Filter the list of views fields down to only supported date-type fields.
+   *
+   * The supported date-type fields are timestamps and the three Date fields.
    *
    * @param array $view_fields
-   *   An key=>value array @see views_plugin_display::get_field_labels().
+   *   An associative array like views_plugin_display::get_field_labels().
    *
    * @return array
-   *   An key=>value array (alias => label) of date fields.
+   *   An associative array (alias => label) of date fields.
    */
-  function get_date_field_candidates($view_fields) {
+  protected function get_date_field_candidates($view_fields) {
     $handlers = $this->display->handler->get_handlers('field');
     $field_candidates = array();
+    // These are Date, Date (ISO format), and Date (Unix timestamp).
+    $date_fields = array('datetime', 'date', 'datestamp');
+    
     foreach ($view_fields as $alias => $label) {
-      $handler = $handlers[$alias];
-      if (get_class($handler) == 'views_handler_field_date'
-        || (get_class($handler) == 'views_handler_field_field' &&
-          // These are Date, Date (ISO format), and Date (Unix timestamp).
-          in_array($handler->field_info['type'], array('datetime', 'date', 'datestamp')))) {
+      $handler_class = get_class($handlers[$alias]);
+      if ($handler_class == 'views_handler_field_date'
+          || ($handler_class == 'views_handler_field_field'
+            && in_array($handlers[$alias]->field_info['type'], $date_fields))) {
         $field_candidates[$alias] = $label;
       }
     }
@@ -347,9 +357,9 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
    * @param string $field_id
    *   The ID assigned to the required field in the display.
    *
-   * @see views_plugin_style::get_field().
+   * @see views_plugin_style::get_field()
    */
-  function get_field($index, $field_id) {
+  protected function get_field($index, $field_id) {
     if (empty($this->view->style_plugin) || !is_object($this->view->style_plugin) || empty($field_id)) {
       return '';
     }

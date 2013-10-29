@@ -23,10 +23,11 @@ Date iCal has several required dependencies, and an optional one:
 - The Feeds module is optional, but it's needed to enable import of iCal feeds
     from other sites.
 
-To install the iCalcreator library, download it from http://github.com/iCalcreator/iCalcreator
-using either git clone or the "Download Zip" button. Inside you'll find the file
-iCalcreator.class.php. Copy that file to a folder in your Drupal site named
-sites/all/libraries/iCalcreator.
+To install the iCalcreator library, download it from the project's github:
+http://github.com/iCalcreator/iCalcreator
+Using either git clone or the "Download Zip" button, you'll find the file
+iCalcreator.class.php inside. Copy that file to a folder in your Drupal site
+named sites/all/libraries/iCalcreator.
 
 Or, if you have drush, install iCalcreator by running this command from your 
 site's root directory:
@@ -50,10 +51,10 @@ the iCal Fields plugin is a bit more versatile.
 
 HOW TO EXPORT AN ICAL FEED USING THE iCal Entities PLUGIN
 
-1.  Go to the Manage Display page for the content type you want to export in an 
+1.  Go to the Manage Display page for the content type you want to export in an
     iCal feed. On the "Default" tab, check the box for "iCal" in the section 
-    titled "Use custom display settings for the following view modes", then click
-    Save.
+    titled "Use custom display settings for the following view modes", then
+    click Save.
 2.  Click the new "iCal" tab that now appears in the upper-right corner of the
     Manage Display page for this content type.
 3.  Set up the iCal view mode to contain whatever should be exported as the
@@ -63,10 +64,10 @@ HOW TO EXPORT AN ICAL FEED USING THE iCal Entities PLUGIN
     site's iCal feeds.
 5.  Create a new View that displays the entities that you want to include in the
     iCal feed.
-6.  Add a "Feed" to the view. Change the Format to 'iCal Feed'. When you click 
-    Apply from that dialog, you'll be given the option to name the calendar. This
-    name will appear in your users' calendar clients as the calendar's title.
-7.  Change the Show setting to 'iCal Entity' (rather than 'Content' or 'Fields').
+6.  Add a "Feed" to the view. Change the Format to 'iCal Feed'. When you click
+    Apply from that dialog, you'll be given the option to name the calendar, 
+    which will appear in your users' calendar clients as the calendar's title.
+7.  Change the Show setting to 'iCal Entity'.
 8.  In the settings for iCal Entity, select the date field that should be used 
     as the event date for the iCal feed. Make sure that you choose a field that
     is a part of every entity that your View displays. Otherwise, the entities
@@ -95,10 +96,10 @@ HOW TO EXPORT AN ICAL FEED USING THE iCal Entities PLUGIN
 
 HOW TO EXPORT AN ICAL FEED USING THE iCal Fields PLUGIN
 1-6.These steps are the same as above.
-7.  Add views fields for each piece of information that you want to populate your
-    iCal feed with. A Date field is required, and fields that will act as the 
-    Title and Description of the events are reccomended. You can also include a
-    Location field.
+7.  Add views fields for each piece of information that you want to populate
+    your iCal feed with. A Date field is required, and fields that will act as
+    the Title and Description of the events are reccomended. You can also 
+    include a Location field.
 8.  Back in the FORMAT section, change the Show setting to 'iCal Fields'.
 9.  In the settings for iCal Fields, choose which views fields you want to use
     for the Date, Title, Description, and Location.

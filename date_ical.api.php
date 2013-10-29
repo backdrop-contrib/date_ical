@@ -23,7 +23,7 @@
  *   - 'summary': The title field string
  *   - 'location': The location field string.
  * @param object $view
- *  The view object that is being executed to render the iCal feed.
+ *   The view object that is being executed to render the iCal feed.
  * @param array $context
  *   Depending on whether this event is being constructed using the Fields or
  *   Entity plugins, this context array will have different keys and values.
@@ -96,7 +96,7 @@ function hook_date_ical_export_raw_event_alter(&$event, $view, $context) {
  * @param object $vevent
  *   A reference to an iCalcreator vevent which will be exported in this feed.
  * @param object $view
- *  The view object that is being executed to render the iCal feed.
+ *   The view object that is being executed to render the iCal feed.
  * @param object $event_array
  *   The array representation of the event that's been rendered to the $vevent.
  */
@@ -113,7 +113,7 @@ function hook_date_ical_export_vevent_alter(&$vevent, $view, $event_array) {
  * @param object $vcalendar
  *   A reference to the iCalcreator vcalendar object representing this feed.
  * @param object $view
- *  The view object that is being executed to render the iCal feed.
+ *   The view object that is being executed to render the iCal feed.
  */
 function hook_date_ical_export_vcalendar_alter(&$vcalendar, $view) {
 
@@ -128,7 +128,7 @@ function hook_date_ical_export_vcalendar_alter(&$vcalendar, $view) {
  * @param string $rendered_calendar
  *   A reference to the string containing the rendered the iCal feed.
  * @param object $view
- *  The view that is being executed to render this iCal feed.
+ *   The view that is being executed to render this iCal feed.
  */
 function hook_date_ical_export_post_render_alter(&$rendered_calendar, $view) {
 
@@ -149,7 +149,7 @@ function hook_date_ical_export_post_render_alter(&$rendered_calendar, $view) {
  *   - 'fetcher_result': The FeedsFetcherResult object for this Feed.
  */
 function hook_date_ical_import_vcalendar_alter(&$calendar, $context) {
-  
+
 }
 
 /**
@@ -165,14 +165,15 @@ function hook_date_ical_import_vcalendar_alter(&$calendar, $context) {
  *   - 'fetcher_result': The FeedsFetcherResult object for this Feed.
  */
 function hook_date_ical_import_component_alter(&$component, $context) {
-  // Example of what might be done with this alter hook
+  // Example of what might be done with this alter hook.
   if ($component->objName == 'vevent') {
-    // Do something for vevents ...
+    // Do something for vevents...
   }
-  else if ($component->objName == 'valarm') {
-    // Do something different for valarms ...
+  elseif ($component->objName == 'valarm') {
+    // Do something different for valarms...
   }
 }
+
 /**
  * Alter the timezone string from an imported iCal Feed.
  *

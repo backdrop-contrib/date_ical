@@ -232,20 +232,11 @@ class ParserVcalendar {
         }
 
         if (module_exists('date_all_day')) {
-          // If the Date All Day module is installed, single-day All Day events
-          // will be displayed wrong unless we ignore the DTEND value. Yes, that
-          // means we may be ignoring work done in other parts of this function,
-          // but we need that work for when Date All Day isn't installed.
+          // If the Date All Day module is installed, we need to rewind the
+          // DTEND by one day, because of the problem with FeedsDateTime
+          // mentioned below.
           $prev_day = iCalUtilityFunctions::_duration2date($property['value'], array('day' => -1));
-          if ($dtstart['value'] == $prev_day) {
-            return NULL;
-          }
-          else {
-            // If Date All Day is installed and this All Day event spans
-            // multiple days, we need to rewind the DTEND by one day, because
-            // of the problem with FeedsDateTime mentioned below.
-            $property['value'] = $prev_day;
-          }
+          $property['value'] = $prev_day;
         }
       }
 
@@ -257,7 +248,7 @@ class ParserVcalendar {
       $date_string = sprintf('%d-%d-%d 00:00:00', $property['value']['year'], $property['value']['month'], $property['value']['day']);
       // Use the server's timezone rather than letting it default to UTC.
       // This will help ensure that the date value doesn't get messed up when
-      // Date converts its timezone as it's read from the database.
+      // Date converts its timezone as the value is read from the database.
       // This is *essential* for All Day events, because Date stores them as
       // '2013-10-03 00:00:00' in the database, rather than doing the sensible
       // thing and storing them as '2013-10-03'.

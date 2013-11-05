@@ -231,7 +231,9 @@ function date_ical_sanitize_text($text = '') {
   // single \n's lying around, because iCalcreator will properly "fold" long
   // text fields for us. So, we need to remove all instances of \n which
   // are neither immediately preceeded, nor followed, by another \n.
-  $text = preg_replace("/(?<!\n)\n(?!\n)/", " ", $text);
+  // However, \n's which are followed immediately by a > character should
+  // remain, because of how drupal_html_to_text() converts <blockquote>.
+  $text = preg_replace("/(?<!\n)\n(?![\n\>])/", " ", $text);
   return $text;
 }
 

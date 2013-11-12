@@ -242,7 +242,7 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
       // Only attempt this is the entity actually has this field.
       $items = field_get_items($this->entity_type, $entity, $location_field_name);
       if ($items) {
-        $location_field = $items[$delta];
+        $location_field = $items[0];
         if ($location_info['type'] == 'node_reference') {
           // Make sure this Node Reference actually references a node.
           if ($location_field['nid']) {
@@ -280,7 +280,7 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
       $items = field_get_items($this->entity_type, $entity, $summary_field_name);
       $summary = '';
       if ($items) {
-        $summary_field = $items[$delta];
+        $summary_field = $items[0];
         if ($summary_info['type'] == 'node_reference') {
           // Make sure this Node Reference actually references a node.
           if ($summary_field['nid']) {

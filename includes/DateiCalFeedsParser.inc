@@ -17,8 +17,9 @@ class DateiCalFeedsParser extends FeedsParser {
    * Implements FeedsParser::parse().
    */
   public function parse(FeedsSource $source, FeedsFetcherResult $fetcher_result) {
-    if (!libraries_load('iCalcreator')) {
-      throw new DateIcalException(t('Unable to load the iCalcreator library. Please ensure that you have installed the library correctly.'));
+    $library = libraries_load('iCalcreator');
+    if (!$library['loaded']) {
+      throw new DateIcalException(t('Unable to load the iCalcreator library. Please ensure that it is properly installed.'));
     }
     $state = $source->state(FEEDS_PARSE);
     

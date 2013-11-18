@@ -151,7 +151,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
     
     // Try to load the iCalcreator library.
     $library = libraries_load('iCalcreator');
-    if (empty($library['loaded'])) {
+    if (!$library['loaded']) {
       // The iCalcreator library isn't available, so we can't output anything.
       $output = t('Please install the iCalcreator library to enable iCal output.');
     }

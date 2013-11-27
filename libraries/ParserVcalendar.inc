@@ -356,9 +356,10 @@ class ParserVcalendar {
     }
 
     $rrule = trim($vcalendar_component->createRrule());
-    $exdate = trim($vcalendar_component->createExdate());
     $rdate = trim($vcalendar_component->createRdate());
-    return "$rrule\n$exdate\n$rdate";
+    $exrule = trim($vcalendar_component->createExrule());
+    $exdate = trim($vcalendar_component->createExdate());
+    return "$rrule|$rdate|$exrule|$exdate";
   }
 
   /**

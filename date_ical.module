@@ -10,7 +10,7 @@
  * value of the iCal feeds created by Date iCal. It's primarily used for
  * debugging.
  */
-define('DATE_ICAL_VERSION', '3.0');
+define('DATE_ICAL_VERSION', '3.1-dev');
 
 /**
  * Exception class for generic exceptions thrown by this module.
@@ -247,23 +247,27 @@ function date_ical_sanitize_text($text = '') {
  * @param string $target
  *   The machine name of the field into which this RRULE shall be parsed,
  *   with ":rrule" appended to the end.
- * @param string $feed_element
- *   The RRULE string (with optional EXDATEs and RDATEs separated by \n).
+ * @param string $repeat_rule
+ *   The repeat rule string, formatted like "$rrule|$rdate|$exrule|$exdate".
  */
-function date_ical_feeds_set_rrule($source, $entity, $target, $feed_element) {
-  if (empty($feed_element)) {
-    // Make sure that VEVENTs which have no RRULE aren't given repeating dates.
+function date_ical_feeds_set_rrule($source, $entity, $target, $repeat_rule) {
+  if (empty($repeat_rule)) {
+    // Don't alter the entity if there's no repeat rule.
     return;
   }
-  // Add the RRULE value to the field in $entity.
-  $exploded = explode(':', $target, 2);
-  $field_name = $exploded[0];
-  module_load_include('inc', 'date_api', 'date_api_ical');
-  $info = field_info_field($field_name);
-  foreach ($entity->{$field_name} as $lang => $field_array) {
-    // Add the multiple date values that Date Repeat Field uses to represent
-    // recurring dates.
-    $values = date_repeat_build_dates($feed_element, NULL, $info, $field_array[0]);
+  // $target looks like <field_name>:rrule, but we only need <field_name>.
+  $field_name = current(explode(':', $target, 2));
+  // Parse the repeat rule into RRULE, RDATE, EXRULE, and EXDATE strings.
+  $repeat_data = array_combine(
+    array('RRULE', 'RDATE', 'EXRULE', 'EXDATE'),
+    explode('|', $repeat_rule)
+  );
+  
+  module_load_include('inc', 'date_ical', 'date_ical.utils');
+  // This "loop" is really just to make sure we get the right array keys. It
+  // souldn't ever execute more than once.
+  foreach ($entity->{$field_name} as $lang => $date_values) {
+    $values = _date_ical_get_repeat_dates($field_name, $repeat_data, $date_values[0], $source);
     foreach ($values as $key => $value) {
       $entity->{$field_name}[$lang][$key] = $value;
     }

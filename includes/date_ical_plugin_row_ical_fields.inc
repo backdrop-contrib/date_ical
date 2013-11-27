@@ -130,7 +130,10 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
         // If $date_field_name is still 'first_available' at this point, we
         // couldn't find an available Date value. Processing cannot proceed.
         $title = strip_tags($this->view->style_plugin->get_field($row->index, $this->options['title_field']));
-        throw new BlankDateFieldException(t("The row %title has no available Date value. An iCal entry cannot be created for it.", array('%title' => $title)));
+        if (empty($title)) {
+          $title = "Undetermined title";
+        }
+        throw new BlankDateFieldException(t("The row titled %title has no available Date value. An iCal entry cannot be created for it.", array('%title' => $title)));
       }
       $date = $this->get_row_date($row, $date_field_name);
     }

@@ -332,6 +332,7 @@ function _date_ical_get_location_fields($base = 'node') {
       'text_with_summary',
       'node_reference',
       'addressfield',
+      'location'
     );
     if (!$info || !in_array($info['type'], $supported_location_fields)) {
       continue;

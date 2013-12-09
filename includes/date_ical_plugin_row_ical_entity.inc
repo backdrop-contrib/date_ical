@@ -272,7 +272,7 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
           $location_data = array();
           foreach ($included_fields as $included_field) {
             if (!empty($location_field[$included_field])) {
-              $locations_data[] = $location_field[$included_field];
+              $location_data[] = $location_field[$included_field];
             }
           }
           $location = check_plain(implode(', ', $location_data));

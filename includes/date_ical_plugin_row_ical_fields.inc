@@ -190,7 +190,8 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       }
     }
     $entity_id = $row->{$this->view->base_field};
-    $domain = check_plain($_SERVER['SERVER_NAME']);
+    global $base_url;
+    $domain = preg_replace('#^https?://#', '', $base_url);
     $event['uid'] = "calendar.$entity_id.$date_field_name.$date_field_delta@$domain";
     
     // Because of the way that Date implements repeating dates, we're going to

@@ -196,7 +196,8 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
         return;
       }
       $date_field = $items[$delta];
-      $domain = check_plain($_SERVER['SERVER_NAME']);
+      global $base_url;
+      $domain = preg_replace('#^https?://#', '', $base_url);
       $entity->date_id[] = "calendar.$id.$field_name.$delta@$domain";
       
       if (!empty($date_field['value'])) {

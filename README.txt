@@ -1,8 +1,8 @@
 Date iCal
 
 This module allows users to export iCal feeds with Views, and import iCal feeds
-from other sites with the Feeds module. Any entity can act as the source of
-events for an iCal feed, as long as that entity contains a Date field. Date 
+from other sites with Feeds. Any Entity can act as the source of events for an
+iCal feed, as long as that entity contains a Date field. Date 
 iCal creates a new iCal "view mode" for all entities, which is used to format
 the Description field of the events in the iCal feed (when using the iCal 
 Entity plugin).
@@ -11,8 +11,9 @@ For an easier-to-read HTML version of these instructions, please go to
 http://www.drupal.org/project/date_ical and click the "Read documentation" link
 in the Resources section of the right sidebar.
 
+===============================================================================
 INSTALLATION
-
+===============================================================================
 Date iCal has several required dependencies, and an optional one: 
 - The Views (version 3.5+), Entity API, Libraries API (version 2.0), and Date 
     modules are required.
@@ -45,7 +46,10 @@ green, Date iCal is ready to go. If it's red, the iCalcreator library is not
 properly installed. If it's missing, you'll need to enable Date iCal and then 
 come back to this page. 
 
+
+===============================================================================
 EXPORTING AN ICAL FEED USING Views
+===============================================================================
 There are two plugins that export iCal feeds. You can use either one, though
 the iCal Fields plugin is a bit more versatile.
 
@@ -106,7 +110,9 @@ HOW TO EXPORT AN ICAL FEED USING THE iCal Fields PLUGIN
 10+ These steps are the same as above. 
 
 
-IMPORTING ICAL FEEDS FROM ANOTHER SITE USING Feeds
+===============================================================================
+IMPORTING AN ICAL FEED FROM ANOTHER SITE USING Feeds
+===============================================================================
 - Install the Feeds module, which is the framework upon which Date iCal's 
   import functionality is built.
 - Login to your Drupal site and navigate to the admin/structure/feeds page.
@@ -151,7 +157,9 @@ IMPORTING ICAL FEEDS FROM ANOTHER SITE USING Feeds
 Remember, you have to map the UID source to the GUID target, and make it 
 unique, or your imports won't work!
 
+===============================================================================
 IMPORTANT NOTE:
+===============================================================================
 If you're building a site that will be viewed by out-of-state users, and you
 allow said users to set their own timezone, you'll want to set up your Date
 fields to use the "Date's time zone" option. If you don't, then users who live
@@ -160,13 +168,33 @@ timezone, rather than your events' timezone. This makes sense if your events
 will be broadcast live to these out-of-state users, but if they need to travel
 to your event, they may end up arriving at the wrong time.
 
+===============================================================================
+HOW TO FIX THE "not a valid timezone" ERROR
+===============================================================================
+If you are seeing a warning about invalid timezones when you import an iCal
+feed, you'll need to implement hook_date_ical_import_timezone_alter() in a 
+custom module to fix it. To do so, either edit an existing custom module, or
+make a new module and add this function to it:
+
+<?php
+/**
+ * Implements hook_date_ical_import_timezone_alter().
+ */
+function <module>_date_ical_import_timezone_alter(&$tzid, $context) {
+  if (!empty($tzid)) {
+    // Do something to fix your invalid timezone.
+    // For instance, if all your events take place in one timezone, find your
+    // region's official TZID, and replace $tzid with it. Like this:
+    // $tzid = 'America/Los_Angeles';
+  }
+}
+?>
+
+Replace <module> with the name of your module, change the code to do whatever
+needs to be done to fix your timezones, and clear your Drupal cache.
+
 
 Additional Notes:
-The Feeds plugin was originally written by ekes, for the "iCal feed parser"
-module (http://www.drupal.org/project/parser_ical). It was modified and 
-improved for Date iCal by coredumperror. In Date iCal 3.0, the plugin was
-re-written from scratch to conform to the Feeds APIs.
-
 At this time, Date iCal only supports outputting iCal calendars through Views.
 To put an "Add to calendar" button on individual event nodes, try the 
 <a href="http://drupal.org/project/addtocal">Add to Cal</a> module, or follow
@@ -179,3 +207,6 @@ iCal feeds.
 Developers who wish to implement more powerful manipulation of event data can
 read the date_ical.api.php file to learn about the various alter hooks that 
 date_ical exposes.
+
+The libraries/windowsZones.json file is from Version24 of the Unicode CLDR:
+http://cldr.unicode.org/.

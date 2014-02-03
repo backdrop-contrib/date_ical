@@ -226,8 +226,8 @@ class ParserVcalendar {
     if ($is_all_day) {
       if ($property_key == 'DTEND') {
         if ($dtstart === FALSE) {
-          // This will almost certainly never happen, but the error message in
-          // this would be incomprehensible without this check.
+          // This will almost certainly never happen, but the error message
+          // would be incomprehensible without this check.
           throw new DateIcalParseException(t('Feed import failed! The event with UID %uid is invalid: it has a DTEND but no DTSTART!', array('%uid' => $uid)));
         }
 
@@ -370,11 +370,34 @@ class ParserVcalendar {
       $datetimezone = new DateTimeZone($tzid);
     }
     catch (Exception $e) {
-      $link = l(t('here'), 'http://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List', array('absolute' => TRUE));
+      // In case this is a Windows TZID, read the mapping file to try and
+      // convert it to a real TZID.
+      $zones = file_get_contents(drupal_get_path('module', 'date_ical') . '/libraries/windowsZones.json');
+      $zones_assoc = json_decode($zones, TRUE);
+      $windows_to_olson_map = array();
+      foreach ($zones_assoc['supplemental']['windowsZones']['mapTimezones'] as $mapTimezone) {
+        if ($mapTimezone['mapZone']['_other'] == $tzid) {
+          // $mapTimezone['mapZone']['_type'] is space-separated TZIDs.
+          $tzids = preg_split('/\s/', $mapTimezone['mapZone']['_type']);
+          try {
+            // They all have the same UTC offset, so for our purposes we can
+            // just take the first one.
+            return new DateTimeZone($tzids[0]);
+          }
+          catch (Exception $e) {
+            // If this one also fails, we're out of luck, so just fall through
+            // to the regular error report code.
+            break;
+          }
+        }
+      }
+      
+      $tz_wiki = l(t('here'), 'http://en.wikipedia.org/wiki/List_of_tz_database_time_zones#List');
+      $help = l(t('README'), 'admin/help/date_ical', array('absolute' => TRUE));
       $msg = t(
-          '"@tz" is not a valid timezone (see the TZ column !here), so Date iCal used UTC (which is probably wrong!).<br>
-          Try implementing hook_date_ical_import_timezone_alter() in a custom module to fix this problem.',
-          array('@tz' => $tzid, '!here' => $link)
+          '"@tz" is not a valid timezone (see the TZ column !here), so Date iCal had to fall back to UTC (which is probably wrong!).<br>
+          Please read the Date iCal !readme for instructions on how to fix this.',
+          array('@tz' => $tzid, '!here' => $tz_wiki, '!readme' => $help)
       );
       $this->source->log('parse', $msg, array(), WATCHDOG_WARNING);
       drupal_set_message($msg, 'warning', FALSE);

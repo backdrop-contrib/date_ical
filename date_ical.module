@@ -180,6 +180,17 @@ function date_ical_libraries_info() {
 }
 
 /**
+ * Implements hook_help().
+ */
+function date_ical_help($path, $arg) {
+  switch ($path) {
+    case 'admin/help#date_ical':
+      // Return a line-break version of the module README.txt
+      return check_markup(file_get_contents(dirname(__FILE__) . "/README.txt"));
+  }
+}
+
+/**
  * Implements hook_ctools_plugin_api().
  */
 function date_ical_ctools_plugin_api($owner, $api) {

@@ -185,8 +185,7 @@ function date_ical_libraries_info() {
 function date_ical_help($path, $arg) {
   switch ($path) {
     case 'admin/help#date_ical':
-      // Return a line-break version of the module README.txt
-      return check_markup(file_get_contents(dirname(__FILE__) . "/README.txt"));
+      return '<pre>' . file_get_contents(drupal_get_path('module', 'date_ical') . "/README.txt") . '</pre>';
   }
 }
 

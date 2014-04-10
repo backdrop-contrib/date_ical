@@ -64,7 +64,7 @@ class DateiCalFeedsParser extends FeedsParser {
     // the subsequent batch starts on the first unparsed component.
     $state->pointer = $parser->getLastComponentParsed() + 1;
     $state->progress($state->total, $state->pointer);
-    
+
     return new FeedsParserResult($rows);
   }
   

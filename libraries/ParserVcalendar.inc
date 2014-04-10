@@ -28,10 +28,11 @@ class ParserVcalendar {
   public function __construct($calendar, $source, $fetcher_result, $config) {
     $this->calendar = $calendar;
     $this->source = $source;
+    $this->mapping_sources = feeds_importer($source->id)->parser->getMappingSources();
     $this->fetcherResult = $fetcher_result;
     $this->config = $config;
   }
-
+  
   /**
    * Parses the vcalendar object into an array of event data arrays.
    *
@@ -42,8 +43,7 @@ class ParserVcalendar {
    *   Specifies how many components to parse on this run.
    *
    * @return array
-   *   An array of parsed event data keyed by the same strings as the array
-   *   returned by DateiCalFeedsParser::getiCalMappingSources().
+   *   An array of parsed event data keyed by our mapping source property keys.
    */
   public function parse($offset, $limit) {
     // Sometimes, the feed will set a timezone for every event in the calendar
@@ -95,14 +95,49 @@ class ParserVcalendar {
     // Parse each raw component in the current batch into a Feeds-compatible
     // event data array.
     $events = array();
-    $sources = DateiCalFeedsParser::getiCalMappingSources();
     $batch = array_slice($raw_components, $offset, $limit, TRUE);
     foreach ($batch as $ndx => $raw_component) {
       $parsed_component = array();
-      foreach ($sources as $property_key => $data) {
-        $handler = $data['date_ical_parse_handler'];
-        $parsed_component[$property_key] = $this->$handler($property_key, $raw_component);
+      foreach ($this->mapping_sources as $property_key => $data) {
+        $handler = NULL;
+        if (isset($data['date_ical_parse_handler'])) {
+          $handler = $data['date_ical_parse_handler'];
+        }
+        else {
+          // This is not one of our sources, so if we don't recognize and
+          // support it, we'll have to pass a warning to the user.
+          if ($property_key == 'geofield') {
+            $handler = 'parseGeofield';
+          }
+          else {
+            // We can safely ignore certain sources.
+            $known_unknowns = array(
+              // "Black Source 1" is from Feeds Tamper.
+              'Blank source 1',
+            );
+            if (!in_array($property_key, $known_unknowns)) {
+              // Only warn the user if this mapping source is in use.
+              foreach ($this->source->importer->processor->config['mappings'] as $mapping) {
+                if ($mapping['source'] == $property_key) {
+                  drupal_set_message(t('Date iCal does not recognize the "@name" Mapping Source, and must skip it.', array('@name' => $data['name'])), 'warning', FALSE);
+                  break;
+                }
+              }
+            }
+          }
+        }
+        if ($handler) {
+          $parsed_component[$property_key] = $this->$handler($property_key, $raw_component);
+        }
+        
+        if ($property_key == 'geofield' && !empty($parsed_component['geofield'])) {
+          // To make our data readable by geofield_feeds_combined_source(), we
+          // need to put it into the format output by Simplepie 1.3.
+          $parsed_component['location_latitude'] = array($parsed_component['geofield']['lat']);
+          $parsed_component['location_longitude'] = array($parsed_component['geofield']['lon']);
+        }
       }
+      
       // Allow modules to alter the final parsed data before we send it to the
       // Feeds processor.
       drupal_alter('date_ical_import_post_parse', $parsed_component, $context2);
@@ -151,7 +186,22 @@ class ParserVcalendar {
     $text = str_replace(array('\n', '\N'), "\n", $text);
     return $text;
   }
-
+  
+  /**
+   * Parses GEO fields.
+   *
+   * @return array
+   *   The latitude and longitude values, keyed by 'lat' and 'lon'.
+   */
+  public function parseGeofield($property_key, $vcalendar_component) {
+    if (!empty($vcalendar_component->geo['value'])) {
+      return array(
+        'lat' => $vcalendar_component->geo['value']['latitude'],
+        'lon' => $vcalendar_component->geo['value']['longitude'],
+      );
+    }
+  }
+  
   /**
    * Parses field parameters.
    *
@@ -167,7 +217,7 @@ class ParserVcalendar {
     }
     return isset($property['params'][$attr]) ? $property['params'][$attr] : '';
   }
-
+  
   /**
    * Parses DATE-TIME and DATE fields.
    *
@@ -246,7 +296,7 @@ class ParserVcalendar {
           $property['value'] = $prev_day;
         }
       }
-
+      
       // FeedsDateTime->setTimezone() ignores timezone changes made to dates
       // with no time element, which means we can't compensate for the Date
       // module's automatic timezone conversion when it writes to the DB. To
@@ -297,10 +347,10 @@ class ParserVcalendar {
         $datetimezone = new DateTimeZone(date_default_timezone_get());
       }
     }
-
+    
     return new FeedsDateTime($date_string, $datetimezone);
   }
-
+  
   /**
    * Parses multi-value fields, like the CATEGORIES component.
    *
@@ -323,7 +373,7 @@ class ParserVcalendar {
     }
     return $property;
   }
-
+  
   /**
    * Format RRULEs, which specify when and how often the event is repeated.
    *
@@ -335,7 +385,7 @@ class ParserVcalendar {
     if ($vcalendar_component->getProperty($property_key) === FALSE) {
       return NULL;
     }
-
+    
     // Due to a few bugs and limitations with Date Repeat, we need to massage
     // the RRULE a bit.
     if (count($vcalendar_component->rrule) > 1) {
@@ -352,7 +402,7 @@ class ParserVcalendar {
       if (!isset($rrule_data['value']['INTERVAL'])) {
         $rrule_data['value']['INTERVAL'] = '1';
       }
-
+      
       if (!isset($rrule_data['value']['COUNT']) && !isset($rrule_data['value']['UNTIL'])) {
         drupal_set_message(t("The event with UID %uid has an indefinitely repeating RRULE, which the Date Repeat module doesn't support.<br>
             As a workaround, Date iCal set the repeat count to @count. This value can be customized in the iCal parser settings.",
@@ -361,7 +411,7 @@ class ParserVcalendar {
         $rrule_data['value']['COUNT'] = $this->config['indefinite_count'];
       }
     }
-
+    
     $rrule = trim($vcalendar_component->createRrule());
     $rdate = trim($vcalendar_component->createRdate());
     $exrule = trim($vcalendar_component->createExrule());

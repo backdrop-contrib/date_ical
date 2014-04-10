@@ -2,7 +2,8 @@ Date iCal
 
 This module allows users to export iCal feeds using Views, and import iCal feeds
 from other sites using Feeds. Any entity that contains a Date field can act as
-the source of events for an iCal feed.
+the source/target to export/import an iCal feed.
+
 
 ===============================================================================
 INSTALLATION
@@ -137,9 +138,9 @@ IMPORTING AN ICAL FEED FROM ANOTHER SITE USING Feeds
      you add any more mappings, click "Save" at the bottom of the page.
   2) It's a good idea to map the "Summary/Title" source to the "Title" target,
      and the "Description" source to whatever field is the "body" of the node.
-  3) AS OF 2014/02/03 THERE IS A MAJOR BUG IN THE Feeds THAT LEAVES THE DATE
-     VALUES ON ALL IMPORTED EVENTS BLACNK. YOU MUST UPDATE YOUR Feeds MODULE
-     TO THE DEV RELEASE (https://drupal.org/node/927032) TO OVERCOME THIS BUG.
+  3) AS OF 2014/04/10 THERE IS A MAJOR BUG IN Feeds WHICH LEAVES THE DATE
+     VALUES ON ALL IMPORTED EVENTS BLACNK. YOU MUST APPLY A PATCH TO Feeds
+     TO FIX THIS PROBLEM. IT IS AVAILABLE HERE: http://drupal.org/node/2237177.
 - Once you've completed all the mappings, click the "Save" button on the
   bottom left side of the page.
 - Now you can import the iCal feed into nodes by going to the /import page of
@@ -153,14 +154,31 @@ IMPORTING AN ICAL FEED FROM ANOTHER SITE USING Feeds
 Remember, you have to map the UID source to the GUID target, and make it
 unique, or your imports won't work!
 
-IMPORTANT NOTE:
-If you're building a site that will be viewed by out-of-state users, and you
-allow said users to set their own timezone, you'll want to set up your Date
-fields to use the "Date's time zone" option. If you don't, then users who live
-in a different timezone will be shown the times for your events in their local
-timezone, rather than your events' timezone. This makes sense if your events
-will be broadcast live to these out-of-state users, but if they need to travel
-to your event, they may end up arriving at the wrong time.
+IMPORTANT NOTE ABOUT THE DATE FIELD TIMEZONE SETTING:
+Date fields have a setting called "Time zone handling" which determines how dates
+stored in the field are displayed to users. The Date module actually saves your
+events' dates in the UTC timezone (a.k.a. GMT, or Greenwich Mean Time), then
+performs a conversion on them when the date is displayed to the user.
+This conversion is performed differently depending on these five options:
+ - "Site's time zone" displays the date in the "Default time zone" that's set
+  on the Regional Settings configuration page of your site.
+ - "Date's time zone" displays the date in the timezone that it was specified as
+ within the imported iCal feed.
+ - "User's time zone" converts the date to the timezone set on the current
+  user's account.
+ - "UTC" converts the date to the UTC timezone, regardless of which timezone
+  it was imported with.
+ - "No time zone conversion" is very different from the others. This one
+  actually changes the way the date is saved in the database, storing it in
+  either the current user's timezone or the site's default time zone. It then
+  performs no timezone conversion when the date is displayed.
+
+In most cases, you'll want your Date fields on imported event nodes to use
+"Date's time zone". That's the only one that will ensure that the timezone set
+in the iCal feed will be the timezone in which the date is displayed to users.
+
+If your Date field already has data in it, though, you won't be able to change
+this setting. In that case, "Site's time zone" (the default) is often adequate.
 
 ===============================================================================
 HOW TO FIX THE "not a valid timezone" ERROR
@@ -186,6 +204,7 @@ function <module>_date_ical_import_timezone_alter(&$tzid, $context) {
 
 Replace <module> with the name of your module, change the code to do whatever
 needs to be done to fix your timezones, and clear your Drupal cache.
+
 
 ===============================================================================
 ADDITIONAL NOTES

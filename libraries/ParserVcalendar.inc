@@ -206,7 +206,7 @@ class ParserVcalendar {
           // If this is an all-day event with no end or duration, treat this
           // as a single-day event by emulating DTEND as 1 day after DTSTART.
           $property = $dtstart;
-          $property['value']['day'] = $dtstart['value']['day'] + 1;
+          $property['value'] = iCalUtilityFunctions::_duration2date($property['value'], array('day' => 1));
         }
         else {
           // This event has no end date.

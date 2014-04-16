@@ -154,31 +154,46 @@ IMPORTING AN ICAL FEED FROM ANOTHER SITE USING Feeds
 Remember, you have to map the UID source to the GUID target, and make it
 unique, or your imports won't work!
 
-IMPORTANT NOTE ABOUT THE DATE FIELD TIMEZONE SETTING:
-Date fields have a setting called "Time zone handling" which determines how dates
-stored in the field are displayed to users. The Date module actually saves your
-events' dates in the UTC timezone (a.k.a. GMT, or Greenwich Mean Time), then
-performs a conversion on them when the date is displayed to the user.
-This conversion is performed differently depending on these five options:
- - "Site's time zone" displays the date in the "Default time zone" that's set
-  on the Regional Settings configuration page of your site.
- - "Date's time zone" displays the date in the timezone that it was specified as
- within the imported iCal feed.
- - "User's time zone" converts the date to the timezone set on the current
-  user's account.
- - "UTC" converts the date to the UTC timezone, regardless of which timezone
-  it was imported with.
- - "No time zone conversion" is very different from the others. This one
-  actually changes the way the date is saved in the database, storing it in
-  either the current user's timezone or the site's default time zone. It then
-  performs no timezone conversion when the date is displayed.
 
-In most cases, you'll want your Date fields on imported event nodes to use
-"Date's time zone". That's the only one that will ensure that the timezone set
-in the iCal feed will be the timezone in which the date is displayed to users.
+===============================================================================
+IMPORTANT NOTE ABOUT THE DATE FIELD TIMEZONE SETTING
+===============================================================================
+Date fields have a setting called "Time zone handling" which determines how
+dates are stored in the database, and how they are displayed to users.
+ - "Site's time zone" converts the date to UTC as it stores it to the DB. Upon
+  display, it converts the date to the "Default time zone" that's set on your
+  site's Regional Settings configuration page (/admin/config/regional/settings).
+ - "Date's time zone" stores the date as it is entered, along with the timezone
+  name. Upon display, it converts the date from the stored timezone into the
+  site's default timezone. Well, I'm pretty sure it's *supposed* to do that, but
+  the code behind this setting is very buggy. DO NOT USE THIS SETTING.
+ - "User's time zone" converts the date to UTC as it stores it to the DB. Upon
+  display, it converts the date to the current user's timezone setting.
+ - "UTC" converts the date to UTC as it stores it to the DB. Upon display, it
+  performs no conversion, showing the UTC date directly to the user.
+ - "No time zone conversion" performs no conversion as it stores the date in
+  the DB. It also performs no conversion upon display.
 
-If your Date field already has data in it, though, you won't be able to change
-this setting. In that case, "Site's time zone" (the default) is often adequate.
+The appropriate setting to choose here will depend upon how you want times to
+be displayed on your site. The best setting *would* be "Date's time zone",
+but since that setting is so buggy, I must recommend against it. Instead,
+I'd suggest using "Site's time zone" for sites which host events that are
+mostly in the same timezone (set the site's default timezone appropriately).
+This works just right for local users of your site, and will be the least
+confusing for users who live in a different timezone.
+
+For sites which store events that take place in multiple different timezones,
+the "User's time zone" setting is probably the most appropriate. Most users will
+presumably be tuning in to your events online or on TV (since many take place
+far away from them), which means they'll want to know what time the event occurs
+in their local timezone, so they don't miss the broadcast.
+
+If your Date field is already set to "Date's time zone", you won't be able to
+change it, because that setting uses a different table schema than the others.
+Since "Date's time zone" is very buggy, I'd strongly recomend deleting the
+field and recreating it with a different setting. This will delete all the
+dates in existing event nodes which use this field.
+
 
 ===============================================================================
 HOW TO FIX THE "not a valid timezone" ERROR

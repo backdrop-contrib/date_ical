@@ -17,6 +17,17 @@ class ParserVcalendar {
   protected $xtimezone;
   
   /**
+   * The parsed data for the component that's currently being processed.
+   *
+   * ParserVcalendar parses one component at a time. This array is stored as a
+   * property so that each handler can tell what work the previous handlers
+   * have already completed on the current component.
+   *
+   * @var array
+   */
+  protected $parsed_data = array();
+  
+  /**
    * Variables used for batch processing.
    */
   protected $totalComponents = 0;
@@ -97,7 +108,7 @@ class ParserVcalendar {
     $events = array();
     $batch = array_slice($raw_components, $offset, $limit, TRUE);
     foreach ($batch as $ndx => $raw_component) {
-      $parsed_component = array();
+      $this->parsed_data = array();
       foreach ($this->mapping_sources as $property_key => $data) {
         $handler = NULL;
         if (isset($data['date_ical_parse_handler'])) {
@@ -127,22 +138,22 @@ class ParserVcalendar {
           }
         }
         if ($handler) {
-          $parsed_component[$property_key] = $this->$handler($property_key, $raw_component);
+          $this->parsed_data[$property_key] = $this->$handler($property_key, $raw_component);
         }
         
-        if ($property_key == 'geofield' && !empty($parsed_component['geofield'])) {
+        if ($property_key == 'geofield' && !empty($this->parsed_data['geofield'])) {
           // To make our data readable by geofield_feeds_combined_source(), we
           // need to put it into the format output by Simplepie 1.3.
-          $parsed_component['location_latitude'] = array($parsed_component['geofield']['lat']);
-          $parsed_component['location_longitude'] = array($parsed_component['geofield']['lon']);
+          $this->parsed_data['location_latitude'] = array($this->parsed_data['geofield']['lat']);
+          $this->parsed_data['location_longitude'] = array($this->parsed_data['geofield']['lon']);
         }
       }
       
       // Allow modules to alter the final parsed data before we send it to the
       // Feeds processor.
-      drupal_alter('date_ical_import_post_parse', $parsed_component, $context2);
+      drupal_alter('date_ical_import_post_parse', $this->parsed_data, $context2);
       
-      $events[] = $parsed_component;
+      $events[] = $this->parsed_data;
       // The indices of the original $raw_components array are preserved in
       // $batch, so using the $ndx value here lets us communicate our progress
       // through the full collection of components.
@@ -167,7 +178,7 @@ class ParserVcalendar {
   }
   
   /**
-   * Parses text fields.
+   * Handler that parses text fields.
    *
    * @return string
    *   The parsed text property.
@@ -188,22 +199,22 @@ class ParserVcalendar {
   }
   
   /**
-   * Parses GEO fields.
+   * Handler that parses GEO fields.
    *
    * @return array
    *   The latitude and longitude values, keyed by 'lat' and 'lon'.
    */
   public function parseGeofield($property_key, $vcalendar_component) {
+    $geo = array();
     if (!empty($vcalendar_component->geo['value'])) {
-      return array(
-        'lat' => $vcalendar_component->geo['value']['latitude'],
-        'lon' => $vcalendar_component->geo['value']['longitude'],
-      );
+      $geo['lat'] = $vcalendar_component->geo['value']['latitude'];
+      $geo['lon'] = $vcalendar_component->geo['value']['longitude'];
     }
+    return $geo;
   }
   
   /**
-   * Parses field parameters.
+   * Handler that parses field parameters.
    *
    * @return string
    *   The parsed field parameter.
@@ -215,11 +226,12 @@ class ParserVcalendar {
       // If the component doesn't have this property, return NULL.
       return NULL;
     }
-    return isset($property['params'][$attr]) ? $property['params'][$attr] : '';
+    $param = isset($property['params'][$attr]) ? $property['params'][$attr] : '';
+    return $param;
   }
   
   /**
-   * Parses DATE-TIME and DATE fields.
+   * Handler that parses DATE-TIME and DATE fields.
    *
    * @return FeedsDateTime
    *   The parsed datetime object.
@@ -348,11 +360,12 @@ class ParserVcalendar {
       }
     }
     
-    return new FeedsDateTime($date_string, $datetimezone);
+    $datetime = new FeedsDateTime($date_string, $datetimezone);
+    return $datetime;
   }
   
   /**
-   * Parses multi-value fields, like the CATEGORIES component.
+   * Handler that parses multi-value fields, like the CATEGORIES component.
    *
    * @return array
    *   An array of strings contaning the individual values.
@@ -375,11 +388,10 @@ class ParserVcalendar {
   }
   
   /**
-   * Format RRULEs, which specify when and how often the event is repeated.
+   * Handler that parses RRULE, RDATE, EXRULE, and EXDATE together.
    *
    * @return string
-   *   An RRULE string, with EXDATE and RDATE values separated by \n.
-   *   This is to make the RRULE compatible with date_repeat_split_rrule().
+   *   The RRULE, RDATE, EXRULE, and EXDATE values concatinated with |.
    */
   public function parseRepeatProperty($property_key, $vcalendar_component) {
     if ($vcalendar_component->getProperty($property_key) === FALSE) {
@@ -418,7 +430,7 @@ class ParserVcalendar {
     $exdate = trim($vcalendar_component->createExdate());
     return "$rrule|$rdate|$exrule|$exdate";
   }
-
+  
   /**
    * Internal helper function for creating DateTimeZone objects.
    */
@@ -434,7 +446,7 @@ class ParserVcalendar {
       $windows_to_olson_map = array();
       foreach ($zones_assoc['supplemental']['windowsZones']['mapTimezones'] as $mapTimezone) {
         if ($mapTimezone['mapZone']['_other'] == $tzid) {
-          // $mapTimezone['mapZone']['_type'] is space-separated TZIDs.
+          // Parse out the space-separated TZIDs from $mapTimezone['mapZone']['_type'].
           $tzids = preg_split('/\s/', $mapTimezone['mapZone']['_type']);
           try {
             // They all have the same UTC offset, so for our purposes we can

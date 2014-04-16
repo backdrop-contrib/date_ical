@@ -142,7 +142,7 @@ class DateiCalFeedsParser extends FeedsParser {
       'date_ical_parse_handler' => 'parseDateTimeProperty',
     );
     $sources['RRULE'] = array(
-      'name' => t('Repeat Rule'),
+      'name' => t('Date: Repeat Rule'),
       'description' => t('The RRULE property. Describes when and how often this event should repeat.
         The date field for the target node must be configured to support repeating dates, using the Date Repeat Field module (a submodule of Date).'),
       'date_ical_parse_handler' => 'parseRepeatProperty',

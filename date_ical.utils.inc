@@ -42,17 +42,33 @@ function _date_ical_get_repeat_dates($field_name, $repeat_data, $item, $source) 
   $start_datetime = date_format($start, DATE_FORMAT_DATETIME);
   
   if (!empty($rrule_values['UNTIL']['datetime'])) {
-    // TODO: The spec says that UNTIL must be specified in UTC, but I think
-    // this may not be followd by all feed creators. It may be a good idea to
-    // support optionally assuming the date has the same TZID as DTSTART.
-    $end = date_ical_date($rrule_values['UNTIL'], $timezone);
-    $end_datetime = date_format($end, DATE_FORMAT_DATETIME);
+    // The spec says that UNTIL must be in UTC, but not all feed creators
+    // follow that rule. If the user specified that he wanted to overcome this
+    // problem, use $timezone for the $final_repeat, and then convert the UNTIL
+    // in the unparsed RRULE to UTC.
+    if (!empty($source->importer->config['parser']['config']['until_not_utc'])) {
+      // Change the parsed UNTIL from UTC to $timezone, so that the
+      // date_ical_date() won't convert it.
+      $rrule_values['UNTIL']['tz'] = $timezone;
+      
+      // Convert the unparsed UNTIL to UTC, since the Date code will use it.
+      // It's currently got a Z on it, but only because iCalcreator blindly
+      // added it. Since the user set "until_not_utc", we know it's not UTC.
+      $matches = array();
+      preg_match('/^(.*?)UNTIL=(.*?)Z(.*?)$/', $repeat_data['RRULE'], $matches);
+      $until_date = new DateObject($matches[2], $timezone);
+      $until_date->setTimezone(new DateTimeZone('UTC'));
+      $matches[2] = $until_date->format('Ymd\THis');
+      $repeat_data['RRULE'] = "{$matches[1]}UNTIL={$matches[2]}Z{$matches[3]}";
+    }
+    $final_repeat = date_ical_date($rrule_values['UNTIL'], $timezone);
+    $final_repeat_datetime = date_format($final_repeat, DATE_FORMAT_DATETIME);
   }
   elseif (!empty($rrule_values['COUNT'])) {
-    $end_datetime = NULL;
+    $final_repeat_datetime = NULL;
   }
   else {
-    // No UNTIL and no COUNT?
+    // No UNTIL and no COUNT? This is an illegal RRULE.
     return array();
   }
   
@@ -69,10 +85,11 @@ function _date_ical_get_repeat_dates($field_name, $repeat_data, $item, $source) 
     $date = date_ical_date($rdate, $timezone);
     $additions[] = date_format($date, 'Y-m-d');
   }
-  // TODO: EXRULE.
+  
+  // TODO: EXRULEs.
   
   $date_repeat_compatible_rrule = "{$repeat_data['RRULE']}\n{$repeat_data['RDATE']}\n{$repeat_data['EXDATE']}";
-  $calculated_dates = date_repeat_calc($date_repeat_compatible_rrule, $start_datetime, $end_datetime, $exceptions, $timezone, $additions);
+  $calculated_dates = date_repeat_calc($date_repeat_compatible_rrule, $start_datetime, $final_repeat_datetime, $exceptions, $timezone, $additions);
   $repeat_dates = array();
   foreach ($calculated_dates as $delta => $date) {
     // date_repeat_calc always returns DATE_DATETIME dates, which is
@@ -114,7 +131,7 @@ function _date_ical_parse_repeat_rule($repeat_rule_string) {
       continue;
     }
     
-    // These keys never have multiple values.
+    // The following keys never have multiple values.
     if (in_array($key, array('UNTIL', 'FREQ', 'INTERVAL', 'COUNT', 'WKST'))) {
       if ($key == 'UNTIL') {
         // This is a function from the date_api module, not date_ical.

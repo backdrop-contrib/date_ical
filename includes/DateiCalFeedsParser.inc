@@ -64,7 +64,7 @@ class DateiCalFeedsParser extends FeedsParser {
     // the subsequent batch starts on the first unparsed component.
     $state->pointer = $parser->getLastComponentParsed() + 1;
     $state->progress($state->total, $state->pointer);
-
+    
     return new FeedsParserResult($rows);
   }
   
@@ -74,6 +74,7 @@ class DateiCalFeedsParser extends FeedsParser {
   public function sourceDefaults() {
     return array(
       'indefinite_count' => $this->config['indefinite_count'],
+      'until_not_utc' => $this->config['until_not_utc'],
     );
   }
   
@@ -83,6 +84,7 @@ class DateiCalFeedsParser extends FeedsParser {
   public function configDefaults() {
     return array(
       'indefinite_count' => '52',
+      'until_not_utc' => FALSE,
     );
   }
   
@@ -102,6 +104,14 @@ class DateiCalFeedsParser extends FeedsParser {
       ),
       '#description' => t('Indefinitely repeating events are not supported. The repeat count will instead be set to this number.'),
       '#default_value' => $this->config['indefinite_count'],
+    );
+    $form['until_not_utc'] = array(
+      '#title' => t('RRULE UNTILs are not in UTC'),
+      '#type' => 'checkbox',
+      '#description' => t('Enable this setting if you\'re seeing reccuring events lose or gain repeat(s) at the end. ' .
+          'The iCal spec requires that the UNTIL value in an RRULE be specified in UTC, but some iCal feed creators fail to do this ' .
+          '(the UNTIL values in the feed\'s RRULEs don\'t end is "Z"). This causes the UNTIL value to be off by several hours.'),
+      '#default_value' => $this->config['until_not_utc'],
     );
     return $form;
   }

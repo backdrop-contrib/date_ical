@@ -75,6 +75,7 @@ class DateiCalFeedsParser extends FeedsParser {
     return array(
       'indefinite_count' => $this->config['indefinite_count'],
       'until_not_utc' => $this->config['until_not_utc'],
+      'skip_days' => $this->config['skip_days'],
     );
   }
   
@@ -85,6 +86,7 @@ class DateiCalFeedsParser extends FeedsParser {
     return array(
       'indefinite_count' => '52',
       'until_not_utc' => FALSE,
+      'skip_days' => NULL,
     );
   }
   
@@ -108,12 +110,33 @@ class DateiCalFeedsParser extends FeedsParser {
     $form['until_not_utc'] = array(
       '#title' => t('RRULE UNTILs are not in UTC'),
       '#type' => 'checkbox',
-      '#description' => t('Enable this setting if you\'re seeing reccuring events lose or gain repeat(s) at the end. ' .
+      '#description' => t('Enable this setting if your reccuring events are not repeating the correct number of times. ' .
           'The iCal spec requires that the UNTIL value in an RRULE be specified in UTC, but some iCal feed creators fail to do this ' .
-          '(the UNTIL values in the feed\'s RRULEs don\'t end is "Z"). This causes the UNTIL value to be off by several hours.'),
+          '(the UNTIL values in those feeds\' RRULEs don\'t end is "Z"). This causes the UNTIL value to be off by several hours, ' .
+          'which can cause the repeat calculator to miss or add repeats.'),
       '#default_value' => $this->config['until_not_utc'],
     );
+    $form['skip_days'] = array(
+      '#title' => t('Skip events more than X days old'),
+      '#type' => 'textfield',
+      '#size' => 5,
+      '#description' => t('Set this value to any positive integer (or 0) to skip events which ended more than that many days before the import. ' .
+        'Leave it blank to import all events.'),
+      '#default_value' => $this->config['skip_days'],
+    );
     return $form;
+  }
+  
+  /**
+   * Validation handler for configForm.
+   */
+  public function configFormValidate(&$source_config) {
+    if (!preg_match('/^\d+$/', $source_config['skip_days']) && $source_config['skip_days'] !== '') {
+      form_set_error('skip_days', 'You must enter a positive integer.');
+    }
+    if ($source_config['skip_days'] === '') {
+      $source_config['skip_days'] = NULL;
+    }
   }
   
   /**

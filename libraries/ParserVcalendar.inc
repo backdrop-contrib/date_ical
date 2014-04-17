@@ -153,7 +153,10 @@ class ParserVcalendar {
       // Feeds processor.
       drupal_alter('date_ical_import_post_parse', $this->parsed_data, $context2);
       
-      $events[] = $this->parsed_data;
+      // Skip this event if it's earlier than the user's specified skip time.
+      if (!$this->_skip_current_event()) {
+        $events[] = $this->parsed_data;
+      }
       // The indices of the original $raw_components array are preserved in
       // $batch, so using the $ndx value here lets us communicate our progress
       // through the full collection of components.
@@ -473,5 +476,19 @@ class ParserVcalendar {
       $datetimezone = new DateTimeZone('UTC');
     }
     return $datetimezone;
+  }
+  
+  /**
+   * Internal helper function for skipping old events.
+   */
+  protected function _skip_current_event() {
+    // Must use !isset() here, because 0 and NULL mean different things.
+    if (!isset($this->config['skip_days'])) {
+      return FALSE;
+    }
+    $compare_date = isset($this->parsed_data['DTEND']) ? $this->parsed_data['DTEND'] : $this->parsed_data['DTSTART'];
+    $skip_date = new FeedsDateTime("today -{$this->config['skip_days']} days", $compare_date->getTimezone());
+    $skip = ($skip_date > $compare_date);
+    return $skip;
   }
 }

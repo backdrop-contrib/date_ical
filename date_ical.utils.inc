@@ -55,11 +55,17 @@ function _date_ical_get_repeat_dates($field_name, $repeat_data, $item, $source) 
       // It's currently got a Z on it, but only because iCalcreator blindly
       // added it. Since the user set "until_not_utc", we know it's not UTC.
       $matches = array();
-      preg_match('/^(.*?)UNTIL=(.*?)Z(.*?)$/', $repeat_data['RRULE'], $matches);
-      $until_date = new DateObject($matches[2], $timezone);
-      $until_date->setTimezone(new DateTimeZone('UTC'));
-      $matches[2] = $until_date->format('Ymd\THis');
-      $repeat_data['RRULE'] = "{$matches[1]}UNTIL={$matches[2]}Z{$matches[3]}";
+      if (preg_match('/^(.*?)UNTIL=(.*?)Z(.*?)$/', $repeat_data['RRULE'], $matches)) {
+        $until_date = new DateObject($matches[2], $timezone);
+        $until_date->setTimezone(new DateTimeZone('UTC'));
+        $matches[2] = $until_date->format('Ymd\THis');
+        $repeat_data['RRULE'] = "{$matches[1]}UNTIL={$matches[2]}Z{$matches[3]}";
+      }
+      else {
+        watchdog('date_ical', 'The RRULE string %rrule could not be parsed to fix the UNTIL value. Date repeats may not be calculated correctly.',
+          array('%rrule' => $repeat_data['RRULE']), WATCHDOG_WARNING
+        );
+      }
     }
     $final_repeat = date_ical_date($rrule_values['UNTIL'], $timezone);
     $final_repeat_datetime = date_format($final_repeat, DATE_FORMAT_DATETIME);

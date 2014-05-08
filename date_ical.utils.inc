@@ -55,7 +55,7 @@ function _date_ical_get_repeat_dates($field_name, $repeat_data, $item, $source) 
       // It may currently have a Z on it, but only because iCalcreator blindly
       // adds one to DATETIME-type UNTILs if it's not there.
       $matches = array();
-      if (preg_match('/^(.*?)UNTIL=(.*?)Z?(.*?)$/', $repeat_data['RRULE'], $matches)) {
+      if (preg_match('/^(.*?)UNTIL=([\dT]+)Z?(.*?)$/', $repeat_data['RRULE'], $matches)) {
         // If the UNTIL value doesn't have a "T", it's a DATE, making timezone
         // fixes irrelvant.
         if (strpos($matches[2], 'T') !== FALSE) {

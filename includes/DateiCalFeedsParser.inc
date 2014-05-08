@@ -111,7 +111,7 @@ class DateiCalFeedsParser extends FeedsParser {
       '#title' => t('RRULE UNTILs are not in UTC'),
       '#type' => 'checkbox',
       '#description' => t('Enable this setting if your reccuring events are not repeating the correct number of times. ' .
-          'The iCal spec requires that the UNTIL value in an RRULE be specified in UTC, but some iCal feed creators fail to do this ' .
+          'The iCal spec requires that the UNTIL value in an RRULE almost always be specified in UTC, but some iCal feed creators fail to follow that rule ' .
           '(the UNTIL values in those feeds\' RRULEs don\'t end is "Z"). This causes the UNTIL value to be off by several hours, ' .
           'which can cause the repeat calculator to miss or add repeats.'),
       '#default_value' => $this->config['until_not_utc'],

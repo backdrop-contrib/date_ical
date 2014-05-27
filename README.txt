@@ -16,14 +16,13 @@ Date iCal has several required dependencies, and an optional one:
 - The Feeds module is optional. It's needed only if you you wish to import iCal
   feeds from other sites.
 
-To install the iCalcreator library, download it from the project's github:
-http://github.com/iCalcreator/iCalcreator
-Using either git clone or the "Download Zip" button, you'll find the file
-iCalcreator.class.php inside. Copy that file to a folder in your Drupal site
-named sites/all/libraries/iCalcreator.
+To install the iCalcreator library, download the project's official zip file:
+https://github.com/iCalcreator/iCalcreator/archive/master.zip
+Extract it, and copy iCalcreator.class.php to a folder in your Drupal site
+named sites/all/libraries/iCalcreator (you'll need to create that folder).
 
-Or, if you have drush, install iCalcreator by running this command from your
-site's root directory:
+Or, if you have drush, you can install iCalcreator by running this command from
+your site's root directory:
 drush make sites/all/modules/date_ical/date_ical.make --no-core
 
 Then, clear the cache on your site by using either "drush cc all" or logging in

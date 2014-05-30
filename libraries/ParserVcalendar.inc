@@ -401,13 +401,17 @@ class ParserVcalendar {
       return NULL;
     }
     
+    $uid = $vcalendar_component->getProperty('UID');
+    $count = $this->config['indefinite_count'];
     // Due to a few bugs and limitations with Date Repeat, we need to massage
     // the RRULE a bit.
     if (count($vcalendar_component->rrule) > 1) {
-      drupal_set_message(t('The event with UID %uid has multiple RRULEs, but the Date Repeat module only supports one. Only the first RRULE in the event will be used.<br>
-          If your events need to have a complex repeat pattern, using RDATEs should help.',
-        array('%uid' => $vcalendar_component->getProperty('UID'))), 'warning'
-      );
+      $msg = 'The event with UID %uid has multiple RRULEs, but the Date Repeat module only supports one. Only the first RRULE in the event will be used.
+        If your events need to have a complex repeat pattern, using RDATEs should help.';
+      watchdog('date_ical', $msg, array('%uid' => $uid), 'warning');
+      drupal_set_message('At least one of the events in this iCal feed has multiple RRULEs, but the Date Repeat module only supports one.
+        Only the first RRULE in an event will be used.', 'warning', FALSE);
+      
       // Date Repeat will get extremely confused if it's sent multiple RRULE
       // values, so we need to manually pare it down to only the first one.
       $vcalendar_component->rrule = array($vcalendar_component->rrule[0]);
@@ -419,9 +423,15 @@ class ParserVcalendar {
       }
       
       if (!isset($rrule_data['value']['COUNT']) && !isset($rrule_data['value']['UNTIL'])) {
-        drupal_set_message(t("The event with UID %uid has an indefinitely repeating RRULE, which the Date Repeat module doesn't support.<br>
+        $msg = "The event with UID %uid has an indefinitely repeating RRULE, which the Date Repeat module doesn't support.
+          As a workaround, Date iCal set the repeat count to @count. This value can be customized in the iCal parser settings.";
+        watchdog('date_ical', $msg, array('%uid' => $uid, '@count' => $count), WATCHDOG_WARNING);
+        drupal_set_message(
+          t("At least one of the events in this iCal feed has an indefinitely repeating RRULE, which the Date Repeat module doesn't support.<br>
             As a workaround, Date iCal set the repeat count to @count. This value can be customized in the iCal parser settings.",
-          array('%uid' => $vcalendar_component->getProperty('UID'), '@count' => $this->config['indefinite_count'])), 'warning'
+          array('@count' => $count)),
+          'warning',
+          FALSE
         );
         $rrule_data['value']['COUNT'] = $this->config['indefinite_count'];
       }

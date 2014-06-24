@@ -123,8 +123,9 @@ class ParserVcalendar {
           else {
             // We can safely ignore certain sources.
             $known_unknowns = array(
-              // "Black Source 1" is from Feeds Tamper.
-              'Blank source 1',
+              'Blank source 1', // "Black Source 1" is from Feeds Tamper.
+              'parent:nid', // Defined in FeedsParser
+              'parent:uid', // Defined in FeedsParser
             );
             if (!in_array($property_key, $known_unknowns)) {
               // Only warn the user if this mapping source is in use.

@@ -34,6 +34,17 @@ class ParserVcalendar {
   protected $lastComponentParsed = 0;
   
   /**
+   * This is the list of iCal properties which are allowed to have more than
+   * one entry in a single VEVENT. If we ever support parsing more than just
+   * the first one, this listing will be useful.
+   */
+  protected $multi_entry_properties = array(
+    'ATTACH', 'ATTENDEE', 'CATEGORIES', 'COMMENT', 'CONTACT', 'DESCRIPTION',
+    'EXDATE', 'EXRULE', 'FREEBUSY', 'RDATE', 'RELATED-TO', 'RESOURCES',
+    'RRULE', 'REQUEST-STATUS', 'TZNAME', 'X-PROP'
+  );
+  
+  /**
    * Constructor.
    */
   public function __construct($calendar, $source, $fetcher_result, $config) {
@@ -182,27 +193,6 @@ class ParserVcalendar {
   }
   
   /**
-   * Handler that parses text fields.
-   *
-   * @return string
-   *   The parsed text property.
-   */
-  public function parseTextProperty($property_key, $vcalendar_component) {
-    $text = $vcalendar_component->getProperty($property_key);
-    if ($text === FALSE) {
-      if ($property_key == 'SUMMARY') {
-        $uid = $vcalendar_component->getProperty('UID');
-        throw new DateIcalParseException(t('The component with UID %uid is invalid because it has no SUMMARY (nodes require a title).', array('%uid' => $uid)));
-      }
-      // If the component doesn't have this property, return NULL.
-      return NULL;
-    }
-    // Convert literal \n and \N into newline characters.
-    $text = str_replace(array('\n', '\N'), "\n", $text);
-    return $text;
-  }
-  
-  /**
    * Handler that parses GEO fields.
    *
    * @return array
@@ -218,6 +208,36 @@ class ParserVcalendar {
   }
   
   /**
+   * Handler that parses text fields.
+   *
+   * @return string
+   *   The parsed text property.
+   */
+  public function parseTextProperty($property_key, $vcalendar_component) {
+    $text = $vcalendar_component->getProperty($property_key);
+    // In case someone writes a hook that adds a source for a multi-entry
+    // property and a parameter of that same property, we need to force
+    // iCalcreator to assume it has not accessed that property, yet.
+    // TODO: This is really just a hack. If/when multi-entry properties
+    // become supported, this will need to be redesigned.
+    if (in_array($property_key, $this->multi_entry_properties)) {
+      unset($vcalendar_component->propix[$property_key]);
+    }
+    
+    if ($text === FALSE) {
+      if ($property_key == 'SUMMARY') {
+        $uid = $vcalendar_component->getProperty('UID');
+        throw new DateIcalParseException(t('The component with UID %uid is invalid because it has no SUMMARY (nodes require a title).', array('%uid' => $uid)));
+      }
+      // If the component doesn't have this property, return NULL.
+      return NULL;
+    }
+    // Convert literal \n and \N into newline characters.
+    $text = str_replace(array('\n', '\N'), "\n", $text);
+    return $text;
+  }
+  
+  /**
    * Handler that parses field parameters.
    *
    * @return string
@@ -226,6 +246,11 @@ class ParserVcalendar {
   public function parsePropertyParameter($property_key, $vcalendar_component) {
     list($key, $attr) = explode(':', $property_key);
     $property = $vcalendar_component->getProperty($key, FALSE, TRUE);
+    // See parseTextProperty() for why this is here.
+    if (in_array($property_key, $this->multi_entry_properties)) {
+      unset($vcalendar_component->propix[$property_key]);
+    }
+        
     if ($property === FALSE) {
       // If the component doesn't have this property, return NULL.
       return NULL;

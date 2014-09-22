@@ -448,17 +448,19 @@ class ParserVcalendar {
         $rrule_data['value']['INTERVAL'] = '1';
       }
       
-      if (!isset($rrule_data['value']['COUNT']) && !isset($rrule_data['value']['UNTIL'])) {
+      if ((!isset($rrule_data['value']['COUNT']) && !isset($rrule_data['value']['UNTIL']))) {
         $msg = "The event with UID %uid has an indefinitely repeating RRULE, which the Date Repeat module doesn't support.
           As a workaround, Date iCal set the repeat count to @count. This value can be customized in the iCal parser settings.";
         watchdog('date_ical', $msg, array('%uid' => $uid, '@count' => $count), WATCHDOG_WARNING);
-        drupal_set_message(
-          t("At least one of the events in this iCal feed has an indefinitely repeating RRULE, which the Date Repeat module doesn't support.<br>
-            As a workaround, Date iCal set the repeat count to @count. This value can be customized in the iCal parser settings.",
-          array('@count' => $count)),
-          'warning',
-          FALSE
-        );
+        if ($this->config['indefinite_message_display']) {
+          drupal_set_message(
+            t("At least one of the events in this iCal feed has an indefinitely repeating RRULE, which the Date Repeat module doesn't support.<br>
+              As a workaround, Date iCal set the repeat count to @count. This value can be customized in the iCal parser settings.",
+            array('@count' => $count)),
+            'warning',
+            FALSE
+          );
+        }
         $rrule_data['value']['COUNT'] = $this->config['indefinite_count'];
       }
     }

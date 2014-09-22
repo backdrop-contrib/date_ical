@@ -85,6 +85,7 @@ class DateiCalFeedsParser extends FeedsParser {
   public function configDefaults() {
     return array(
       'indefinite_count' => '52',
+      'indefinite_message_display' => TRUE,
       'until_not_utc' => FALSE,
       'skip_days' => NULL,
     );
@@ -106,6 +107,12 @@ class DateiCalFeedsParser extends FeedsParser {
       ),
       '#description' => t('Indefinitely repeating events are not supported. The repeat count will instead be set to this number.'),
       '#default_value' => $this->config['indefinite_count'],
+    );
+    $form['indefinite_message_display'] = array(
+      '#title' => t('Display message when RRULE is missing COUNT'),
+      '#type' => 'checkbox',
+      '#default_value' => $this->config['indefinite_message_display'],
+      '#description' => t('Display a message when an indefinitely repeating rule is adjusted by the "Indefinite COUNT" setting above.'),
     );
     $form['until_not_utc'] = array(
       '#title' => t('RRULE UNTILs are not in UTC'),

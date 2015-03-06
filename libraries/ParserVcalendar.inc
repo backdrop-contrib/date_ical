@@ -91,7 +91,7 @@ class ParserVcalendar {
       $this->timezones[] = $component;
     }
     
-    // This content array is used by date_ical_import_component_alter() and
+    // This context array is used by date_ical_import_component_alter() and
     // date_ical_import_parsed_data_alter().
     $context2 = array(
       'calendar' => $this->calendar,

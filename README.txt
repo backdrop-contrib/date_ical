@@ -91,6 +91,10 @@ HOW TO EXPORT AN ICAL FEED USING THE iCal Entities PLUGIN
     "Format: iCal Feed", and check "Disable webcal://". Then save your View.
     This will make the iCal icon download a .ics file with the events, instead
     of loading the events directly into the user's calendar app.
+17. If events that you expect your feed to include are not appearing when it
+    gets consumed by a calendar app, check the Drupal permissions for your
+    event content type. If anonymous users can't view the event nodes, they
+    won't appear in your feed when it gets loaded by a calendar app.
 
 HOW TO EXPORT AN ICAL FEED USING THE iCal Fields PLUGIN
 1-6.These steps are the same as above.

@@ -7,10 +7,9 @@
 
 /**
  * The version number of the current release. This is inserted into the PRODID
- * value of the iCal feeds created by Date iCal. It's primarily used for
- * debugging.
+ * value of the iCal feeds created by Date iCal, for debugging purposes.
  */
-define('DATE_ICAL_VERSION', '3.4-dev');
+define('DATE_ICAL_VERSION', '3.5');
 
 /**
  * Exception class for generic exceptions thrown by this module.

@@ -256,6 +256,12 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
           // Concatenate street and house number
           $location_field['thoroughfare'] = implode(' ', array($location_field['thoroughfare'], $location_field['premise']));
           unset($location_field['premise']);
+          // Get full country name
+          if (!empty($location_field['country'])) {
+            require_once DRUPAL_ROOT . '/includes/locale.inc';
+            $countries = country_get_list();
+            $location_field['country'] = $countries[$location_field['country']];
+          }
           foreach ($location_field as $key => $loc) {
             if ($loc && !in_array($key, array('first_name', 'last_name'))) {
               $locations[] = $loc;

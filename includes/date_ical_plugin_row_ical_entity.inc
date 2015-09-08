@@ -253,6 +253,9 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
         }
         elseif ($location_info['type'] == 'addressfield') {
           $locations = array();
+          // Concatenate street and house number
+          $location_field['thoroughfare'] = implode(' ', array($location_field['thoroughfare'], $location_field['premise']));
+          unset($location_field['premise']);
           foreach ($location_field as $key => $loc) {
             if ($loc && !in_array($key, array('first_name', 'last_name'))) {
               $locations[] = $loc;

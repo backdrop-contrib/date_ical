@@ -67,7 +67,7 @@ HOW TO EXPORT AN ICAL FEED USING THE iCal Entities PLUGIN
     as the event date for the iCal feed. Make sure that you choose a field that
     is a part of every entity that your View displays. Otherwise, the entities
     which don't have that field will be left out of the iCal feed.
-9.  You may optionally choose a field that will be used to populate the 
+9.  You may optionally choose a field that will be used to populate the
     Location property of events in your iCal feed. This field can be a text
     field, a Node Reference field, an Addressfield, or a Location field.
 10. Give the Feed a path like 'calendar/%/export.ics', including a '/%/' for

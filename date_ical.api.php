@@ -80,7 +80,7 @@ function hook_date_ical_export_raw_event_alter(&$event, $view, $context) {
       $event['comment'] = check_plain($comment['value']);
     }
   }
-  
+
   // Example: Retrieving information from additional fields in the View (using
   // the Fields plugin).
   $event['comment'] = $view->style_plugin->get_field($context['row_index'], 'field_comment');

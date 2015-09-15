@@ -256,7 +256,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
             $exdates = array();
             foreach ($exceptions as $exception) {
               $except = date_ical_date($exception, 'UTC');
-              date_timezone_set($except, $start['tz']);
+              $except->setTimezone($start['tz']);
               $exception_array = $except->toArray();
               $exdates[] = array(
                 'year' =>  $exception_array['year'],
@@ -284,7 +284,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
             $rdates = array();
             foreach ($additions as $addition) {
               $add = date_ical_date($addition, 'UTC');
-              date_timezone_set($add, $start['tz']);
+              $add->setTimezone($start['tz']);
               $addition_array = $add->toArray();
 
               $rdate = array(
@@ -293,9 +293,9 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
                 'day' =>   $addition_array['day'],
                 // If the user's copy of Date has support for time in RDATEs,
                 // use that. Otherwise use the time from the start date.
-                'hour' =>   isset($addition_array['hour']) ? $addition_array['hour'] : $start['hour'],
-                'min' =>    isset($addition_array['minute']) ? $addition_array['minute'] : $start['minute'],
-                'second' => isset($addition_array['second']) ? $addition_array['second'] : $start['second'],
+                'hour' =>   !empty($addition_array['hour']) ? $addition_array['hour'] : $start['hour'],
+                'min' =>    !empty($addition_array['minute']) ? $addition_array['minute'] : $start['minute'],
+                'second' => !empty($addition_array['second']) ? $addition_array['second'] : $start['second'],
                 'tz' =>     $start['tz']->getName(),
               );
 
@@ -310,9 +310,9 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
                   'day' =>   $addition_array['day'],
                   // If the user's copy of Date has support for time in RDATEs,
                   // use that. Otherwise use the time from the end date.
-                  'hour' =>   isset($addition_array['hour']) ? $addition_array['hour'] : $end['hour'],
-                  'min' =>    isset($addition_array['minute']) ? $addition_array['minute'] : $end['minute'],
-                  'second' => isset($addition_array['second']) ? $addition_array['second'] : $end['second'],
+                  'hour' =>   !empty($addition_array['hour']) ? $addition_array['hour'] : $end['hour'],
+                  'min' =>    !empty($addition_array['minute']) ? $addition_array['minute'] : $end['minute'],
+                  'second' => !empty($addition_array['second']) ? $addition_array['second'] : $end['second'],
                   'tz' =>     $end['tz']->getName(),
                 );
                 $rdate = $rdate_with_end;

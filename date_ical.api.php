@@ -15,7 +15,7 @@
  * hook exists to allow users to alter the original HTML to ensure that it
  * gets converted into pretty plaintext.
  *
- * ONLY <p> tags will be converted to newlines by the plaintext conversion.
+ * <p>, <h*>, and <div> tags are changed to newlines by the plaintext converter.
  *
  * @param array $text_fields
  *   A reference to an associative array with the following keys and values:

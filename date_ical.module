@@ -168,11 +168,23 @@ function date_ical_libraries_info() {
     'version callback' => '_date_ical_detect_icalcreator_version',
     'versions' => array(
       '2.20' => array(
+        // For versions prior to 2.22, the main file of the library was
+        // iCalcreator.class.php, so we check for that first.
+        'version arguments' => array(
+          'file' => 'iCalcreator.class.php',
+          'pattern' => "/define.*?ICALCREATOR_VERSION.*?([\d\.]+)/",
+          'lines' => 100,
+        ),
         'files' => array(
           'php' => array('iCalcreator.class.php'),
         ),
       ),
       '2.22+' => array(
+        'version arguments' => array(
+          'file' => 'iCalcreator.php',
+          'pattern' => "/define.*?ICALCREATOR_VERSION.*?([\d\.]+)/",
+          'lines' => 100,
+        ),
         'files' => array(
           'php' => array('iCalcreator.php'),
         ),
@@ -498,12 +510,19 @@ function _date_ical_convert_rrule_for_icalcreator($rrule) {
   return $new_rrule;
 }
 
-function _date_ical_detect_icalcreator_version() {
-  $path = libraries_get_path('iCalcreator');
-  if (file_exists(DRUPAL_ROOT . "/$path/iCalcreator.class.php")) {
+function _date_ical_detect_icalcreator_version($library) {
+  // If the user has a version of libraries installed that has the
+  // libraries_get_version_from_versions() function, use it to find the
+  // actual version number by inspecting the iCalcreator files.
+  if (function_exists('libraries_get_version_from_versions')) {
+    return libraries_get_version_from_versions($library);
+  }
+
+  // Otherwise, provide a "best guess" version number.
+  if (file_exists(DRUPAL_ROOT . "/{$library['library path']}/iCalcreator.class.php")) {
     return '2.20';
   }
-  else if (file_exists(DRUPAL_ROOT . "/$path//iCalcreator.php")) {
+  else if (file_exists(DRUPAL_ROOT . "/{$library['library path']}/iCalcreator.php")) {
     return '2.22+';
   }
   else {

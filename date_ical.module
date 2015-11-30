@@ -179,7 +179,7 @@ function date_ical_libraries_info() {
           'php' => array('iCalcreator.class.php'),
         ),
       ),
-      '2.22+' => array(
+      '2.22' => array(
         'version arguments' => array(
           'file' => 'iCalcreator.php',
           'pattern' => "/define.*?ICALCREATOR_VERSION.*?([\d\.]+)/",
@@ -523,7 +523,7 @@ function _date_ical_detect_icalcreator_version($library) {
     return '2.20';
   }
   else if (file_exists(DRUPAL_ROOT . "/{$library['library path']}/iCalcreator.php")) {
-    return '2.22+';
+    return '2.22';
   }
   else {
     return FALSE;

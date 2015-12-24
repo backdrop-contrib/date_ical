@@ -472,7 +472,7 @@ class ParserVcalendar {
         $msg = "The event with UID %uid has an indefinitely repeating RRULE, which the Date Repeat module doesn't support.
           As a workaround, Date iCal set the repeat count to @count. This value can be customized in the iCal parser settings.";
         watchdog('date_ical', $msg, array('%uid' => $uid, '@count' => $count), WATCHDOG_WARNING);
-        if ($this->config['indefinite_message_display']) {
+        if (!empty($this->config['indefinite_message_display'])) {
           drupal_set_message(
             t("At least one of the events in this iCal feed has an indefinitely repeating RRULE, which the Date Repeat module doesn't support.<br>
               As a workaround, Date iCal set the repeat count to @count. This value can be customized in the iCal parser settings.",
@@ -481,7 +481,14 @@ class ParserVcalendar {
             FALSE
           );
         }
-        $rrule_data['value']['COUNT'] = $this->config['indefinite_count'];
+        if (isset($this->config['indefinite_count'])) {
+          $rrule_data['value']['COUNT'] = $this->config['indefinite_count'];
+        }
+        else {
+          // Somehow, it's possible for the config values to have no setting, even though we've given them a default.
+          // So make really sure we set the COUNT to *something*.
+          $rrule_data['value']['COUNT'] = 52;
+        }
       }
     }
 

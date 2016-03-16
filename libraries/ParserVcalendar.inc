@@ -493,6 +493,11 @@ class ParserVcalendar {
     }
 
     $rrule = trim($vcalendar_component->createRrule());
+
+    # Due to a bug in iCalcreator 2.20.2, any RRULE that's too long to fit on one line will be returned without
+    # the endline and second-line indentation removed. Thus, we need to do it ourselves.
+    $rrule = preg_replace('/\s/', '', $rrule);
+
     $rdate = trim($vcalendar_component->createRdate());
     $exrule = trim($vcalendar_component->createExrule());
     $exdate = trim($vcalendar_component->createExdate());

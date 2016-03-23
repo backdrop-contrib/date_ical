@@ -1,29 +1,29 @@
 Date iCal
+=========
 
 This module allows users to export iCal feeds using Views, and import iCal feeds
 from other sites using Feeds. Any entity that contains a Date field can act as
 the source/target to export/import an iCal feed.
 
+Installation
+------------
 
-===============================================================================
-INSTALLATION
-===============================================================================
+- Install this module using the official Backdrop CMS instructions at
+  https://backdropcms.org/guide/modules
+
 Date iCal has several required dependencies, and an optional one:
-- The Views (version 3.5+), Entity API, Libraries API (version 2.0+), and Date
-  modules are required.
+- The Views, Entity API, Libraries API, and Date modules are required.
 - The iCalcreator library v2.20.2 is required.
 - PHP 5.3 is required for the iCalcreator library to properly handle timezones.
-- The Feeds module is optional. It's needed only if you you wish to import iCal
-  feeds from other sites.
 
 To install the iCalcreator library, download the project's v2.20.2 zip file:
 https://github.com/iCalcreator/iCalcreator/archive/e3dbec2cb3bb91a8bde989e467567ae8831a4026.zip
 Extract it, and copy iCalcreator.class.php to a folder in your Drupal site
-named sites/all/libraries/iCalcreator (you'll need to create that folder).
+named sites/libraries/iCalcreator (you'll need to create that folder).
 
 Or, if you have drush, you can install iCalcreator by running this command from
 your site's root directory:
-drush make sites/all/modules/date_ical/date_ical.make --no-core
+drush make sites/modules/date_ical/date_ical.make --no-core
 
 Then, clear the cache on your site by using either "drush cc all" or logging in
 to your site and going to Configuration -> Development -> Performance and click
@@ -37,9 +37,9 @@ green, Date iCal is ready to go. If it's red, the iCalcreator library is not
 properly installed. If it's missing, you'll need to enable Date iCal.
 
 
-===============================================================================
+
 EXPORTING AN ICAL FEED USING Views
-===============================================================================
+----------------------------------
 There are two plugins that export iCal feeds. You can use either one, though
 the iCal Fields plugin (described later) is a bit more versatile.
 
@@ -108,9 +108,9 @@ HOW TO EXPORT AN ICAL FEED USING THE iCal Fields PLUGIN
 10+ These steps are the same as above.
 
 
-===============================================================================
+
 IMPORTING AN ICAL FEED FROM ANOTHER SITE USING Feeds
-===============================================================================
+----------------------------------------------------
 - Install the Feeds module, which is the framework upon which Date iCal's
   import functionality is built.
 - Login to your Drupal site and navigate to the admin/structure/feeds page.
@@ -158,9 +158,9 @@ Remember, you have to map the UID source to the GUID target, and make it
 unique, or your imports won't work!
 
 
-===============================================================================
+
 IMPORTANT NOTE ABOUT THE DATE FIELD TIMEZONE SETTING
-===============================================================================
+----------------------------------------------------
 Date fields have a setting called "Time zone handling" which determines how
 dates are stored in the database, and how they are displayed to users.
  - "Site's time zone" converts the date to UTC as it stores it to the DB. Upon
@@ -198,35 +198,35 @@ field and recreating it with a different setting. This will delete all the
 dates in existing event nodes which use this field.
 
 
-===============================================================================
+
 HOW TO FIX THE "not a valid timezone" ERROR
-===============================================================================
+-------------------------------------------
 If you are seeing a warning about invalid timezones when you import an iCal
 feed, you'll need to implement hook_date_ical_import_timezone_alter() in a
 custom module to fix it. To do so, either edit an existing custom module, or
 make a new module and add this function to it:
 
-<?php
-/**
- * Implements hook_date_ical_import_timezone_alter().
- */
-function <module>_date_ical_import_timezone_alter(&$tzid, $context) {
-  if (!empty($tzid)) {
-    // Do something to fix your invalid timezone.
-    // For instance, if all your events take place in one timezone, find your
-    // region's official TZID, and replace $tzid with it. Like this:
-    // $tzid = 'America/Los_Angeles';
-  }
-}
-?>
+    <?php
+    /**
+     * Implements hook_date_ical_import_timezone_alter().
+     */
+    function <module>_date_ical_import_timezone_alter(&$tzid, $context) {
+      if (!empty($tzid)) {
+        // Do something to fix your invalid timezone.
+        // For instance, if all your events take place in one timezone, find your
+        // region's official TZID, and replace $tzid with it. Like this:
+        // $tzid = 'America/Los_Angeles';
+      }
+    }
+    ?>
 
 Replace <module> with the name of your module, change the code to do whatever
 needs to be done to fix your timezones, and clear your Drupal cache.
 
 
-===============================================================================
+
 ADDITIONAL NOTES
-===============================================================================
+----------------
 Date iCal only supports exporting iCal calendars by using Views.
 To put an "Add to calendar" button on individual event nodes, try the
 Add to Cal module (http://drupal.org/project/addtocal), or follow the
@@ -246,3 +246,27 @@ http://cldr.unicode.org/.
 The author of iCalcreator made extenside backwards incompatible changes to the
 library in the v2.22 release. Thus Date iCal does not support any version of
 iCalcreator after v2.20.2.
+
+Issues
+------
+
+Bugs and Feature requests should be reported in the Issue Queue:
+https://github.com/sd-backdrop/date_format_help/issues
+
+Current Maintainers
+-------------------
+
+- John Franklin (https://github.com/sentaidigital/)
+
+Credits
+-------
+
+- Ported to Backdrop CMS by John Franklin (https://github.com/sentaidigital).
+- Originally written for Drupal by Karen Stevenson (https://www.drupal.org/u/karens)
+  and coredumperror (https://www.drupal.org/u/coredumperror).
+
+License
+-------
+
+This project is GPL v2 software. See the LICENSE.txt file in this directory for
+complete text.

@@ -25,13 +25,13 @@ function _date_ical_get_repeat_dates($field_name, $repeat_data, $item, $source) 
   // things like '+1 Tuesday', so adjust back to localtime.
   $timezone = date_get_timezone($field_info['settings']['tz_handling'], $item['timezone']);
   $timezone_db = date_get_timezone_db($field_info['settings']['tz_handling']);
-  $start = new DateObject($item['value'], $timezone_db, date_type_format($field_info['type']));
+  $start = new BackdropDateTime($item['value'], $timezone_db, date_type_format($field_info['type']));
   $start->limitGranularity($field_info['settings']['granularity']);
   if ($timezone != $timezone_db) {
     date_timezone_set($start, timezone_open($timezone));
   }
   if (!empty($item['value2']) && $item['value2'] != $item['value']) {
-    $end = new DateObject($item['value2'], date_get_timezone_db($field_info['settings']['tz_handling']), date_type_format($field_info['type']));
+    $end = new BackdropDateTime($item['value2'], date_get_timezone_db($field_info['settings']['tz_handling']), date_type_format($field_info['type']));
     $end->limitGranularity($field_info['settings']['granularity']);
     date_timezone_set($end, timezone_open($timezone));
   }
@@ -59,7 +59,7 @@ function _date_ical_get_repeat_dates($field_name, $repeat_data, $item, $source) 
         // If the UNTIL value doesn't have a "T", it's a DATE, making timezone
         // fixes irrelvant.
         if (strpos($matches[2], 'T') !== FALSE) {
-          $until_date = new DateObject($matches[2], $timezone);
+          $until_date = new BackdropDateTime($matches[2], $timezone);
           $until_date->setTimezone(new DateTimeZone('UTC'));
           $matches[2] = $until_date->format('Ymd\THis');
           $repeat_data['RRULE'] = "{$matches[1]}UNTIL={$matches[2]}Z{$matches[3]}";
@@ -105,7 +105,7 @@ function _date_ical_get_repeat_dates($field_name, $repeat_data, $item, $source) 
     // date_repeat_calc always returns DATE_DATETIME dates, which is
     // not necessarily $field_info['type'] dates.
     // Convert returned dates back to db timezone before storing.
-    $date_start = new DateObject($date, $timezone, DATE_FORMAT_DATETIME);
+    $date_start = new BackdropDateTime($date, $timezone, DATE_FORMAT_DATETIME);
     $date_start->limitGranularity($field_info['settings']['granularity']);
     date_timezone_set($date_start, timezone_open($timezone_db));
     $date_end = clone($date_start);

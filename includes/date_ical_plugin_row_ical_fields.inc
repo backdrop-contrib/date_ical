@@ -158,14 +158,14 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     // Fortunately, Drupal stores timestamps in the DB as UTC, so we just need
     // to specify that UTC be used rather than the server's local timezone.
     if (isset($entity->created)) {
-      $event['created'] = new DateObject($entity->created, 'UTC');
+      $event['created'] = new BackdropDateTime($entity->created, 'UTC');
     }
     if (isset($entity->changed)) {
-      $event['last-modified'] = new DateObject($entity->changed, 'UTC');
+      $event['last-modified'] = new BackdropDateTime($entity->changed, 'UTC');
     }
     elseif (isset($entity->created)) {
       // If changed is unset, but created is, use that for last-modified.
-      $event['last-modified'] = new DateObject($entity->created, 'UTC');
+      $event['last-modified'] = new BackdropDateTime($entity->created, 'UTC');
     }
     $uri = entity_uri($entity_type, $entity);
     $uri['options']['absolute'] = TRUE;
@@ -263,9 +263,9 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       $is_date_field = TRUE;
       $date_field = $date_field_value[$delta];
 
-      $start = new DateObject($date_field['value'], $date_field['timezone_db']);
+      $start = new BackdropDateTime($date_field['value'], $date_field['timezone_db']);
       if (!empty($date_field['value2'])) {
-        $end = new DateObject($date_field['value2'], $date_field['timezone_db']);
+        $end = new BackdropDateTime($date_field['value2'], $date_field['timezone_db']);
       }
       else {
         $end = clone $start;
@@ -277,8 +277,8 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     }
     elseif (is_numeric($date_field_value)) {
       // Handle timestamps, which are always in UTC.
-      $start = new DateObject($date_field_value, 'UTC');
-      $end   = new DateObject($date_field_value, 'UTC');
+      $start = new BackdropDateTime($date_field_value, 'UTC');
+      $end   = new BackdropDateTime($date_field_value, 'UTC');
     }
     else {
       // Processing cannot proceed with a blank date value.

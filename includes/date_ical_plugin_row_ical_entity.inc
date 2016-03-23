@@ -201,9 +201,9 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
       $entity->date_id[] = "calendar.$id.$field_name.$delta@$domain";
 
       if (!empty($date_field['value'])) {
-        $start = new DateObject($date_field['value'], $date_field['timezone_db']);
+        $start = new BackdropDateTime($date_field['value'], $date_field['timezone_db']);
         if (!empty($date_field['value2'])) {
-          $end = new DateObject($date_field['value2'], $date_field['timezone_db']);
+          $end = new BackdropDateTime($date_field['value2'], $date_field['timezone_db']);
         }
         else {
           $end = clone $start;
@@ -211,8 +211,8 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
       }
     }
     elseif (!$is_field && !empty($date_field)) {
-      $start = new DateObject($date_field, $date_field['timezone_db']);
-      $end   = new DateObject($date_field, $date_field['timezone_db']);
+      $start = new BackdropDateTime($date_field, $date_field['timezone_db']);
+      $end   = new BackdropDateTime($date_field, $date_field['timezone_db']);
     }
 
     // Set the item date to the proper display timezone.
@@ -387,18 +387,18 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
 
     // According to the iCal standard, CREATED and LAST-MODIFIED must be UTC.
     // Fortunately, Drupal stores timestamps in the DB as UTC, so we just need
-    // to tell DateObject to treat the timestamp as UTC from the start.
+    // to tell BackdropDateTime to treat the timestamp as UTC from the start.
     if (isset($entity->created)) {
-      $event['created'] = new DateObject($entity->created, 'UTC');
+      $event['created'] = new BackdropDateTime($entity->created, 'UTC');
     }
     // Pull the 'changed' date from the entity (if available), so that
     // subscription clients can tell if the event has been updated.
     if (isset($entity->changed)) {
-      $event['last-modified'] = new DateObject($entity->changed, 'UTC');
+      $event['last-modified'] = new BackdropDateTime($entity->changed, 'UTC');
     }
     elseif (isset($entity->created)) {
       // If changed is unset, but created is, use that for last-modified.
-      $event['last-modified'] = new DateObject($entity->created, 'UTC');
+      $event['last-modified'] = new BackdropDateTime($entity->created, 'UTC');
     }
 
     // Allow other modules to alter the structured event object, before it gets

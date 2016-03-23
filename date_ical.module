@@ -281,7 +281,7 @@ function date_ical_feeds_set_rrule($source, $entity, $target, $repeat_rule) {
 
   module_load_include('inc', 'date_ical', 'date_ical.utils');
   // This "loop" is really just to make sure we get the right array keys. It
-  // souldn't ever execute more than once.
+  // shouldn't ever execute more than once.
   foreach ($entity->{$field_name} as $lang => $date_values) {
     $values = _date_ical_get_repeat_dates($field_name, $repeat_data, $date_values[0], $source);
     foreach ($values as $key => $value) {
@@ -348,7 +348,9 @@ function _date_ical_get_location_fields($base = 'node') {
       'text_with_summary',
       'node_reference',
       'addressfield',
-      'location'
+      'location',
+      'node_reference',
+      'taxonomy_term_reference',
     );
     if (!$info || !in_array($info['type'], $supported_location_fields)) {
       continue;

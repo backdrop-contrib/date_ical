@@ -26,6 +26,15 @@ class BlankDateFieldException extends DateIcalException {}
  */
 class DateIcalParseException extends DateIcalException {}
 
+function date_ical_autoload_info() {
+  return array(
+    'date_ical_plugin_row_ical_entity' => 'includes/date_ical_plugin_row_ical_entity.inc',
+    'date_ical_plugin_row_ical_fields' => 'includes/date_ical_plugin_row_ical_fields.inc',
+    'date_ical_plugin_style_ical_feed' => 'includes/date_ical_plugin_style_ical_feed.inc',
+    'DateiCalFeedsParser' => 'includes/DateiCalFeedsParser.inc',
+  );
+}
+
 /**
  * Implements hook_hook_info().
  */

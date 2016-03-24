@@ -119,6 +119,8 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
     // Provides all the entity values relatively cheaply, and we don't
     // need to do it repeatedly for the same entity if there are
     // multiple results for one entity.
+    module_load_include('inc', 'date', 'views/date_views.views');
+
     $ids = array();
     foreach ($values as $row) {
       // Use the $id as the key so we create only value per entity.

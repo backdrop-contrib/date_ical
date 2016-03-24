@@ -340,7 +340,7 @@ function _date_ical_get_location_fields($base = 'node') {
   cache_clear_all($cid, 'cache_views');
 
   // Iterate over all the fields that Views knows about.
-  $all_fields = date_views_views_fetch_fields($base, 'field');
+  $all_fields = views_fetch_fields($base, 'field');
   $fields = array();
   foreach ($all_fields as $alias => $val) {
     $name = $alias;
@@ -427,7 +427,7 @@ function _date_ical_get_summary_fields($base = 'node') {
   cache_clear_all($cid, 'cache_views');
 
   // Iterate over all the fields that Views knows about.
-  $all_fields = date_views_views_fetch_fields($base, 'field');
+  $all_fields = views_fetch_fields($base, 'field');
   $fields = array();
   foreach ($all_fields as $alias => $val) {
     $name = $alias;

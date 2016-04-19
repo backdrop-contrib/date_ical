@@ -224,6 +224,12 @@ class ParserVcalendar {
       unset($vcalendar_component->propix[$property_key]);
     }
 
+    if (is_array($text) && isset($vcalendar_component->xprop[$property_key])) {
+      # This is an X-PROPERTY, which iCalcreator returns as an array like array('X-PROP-NAME', value).
+      # We only care about the value, though.
+      $text = $text[1];
+    }
+
     if ($text === FALSE) {
       if ($property_key != 'SUMMARY') {
         return NULL;

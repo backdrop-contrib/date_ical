@@ -498,15 +498,14 @@ class ParserVcalendar {
       }
     }
 
-    $rrule = trim($vcalendar_component->createRrule());
+    # Due to a bug in iCalcreator 2.20.2, any repeat property that's too long to fit on one line will be returned
+    # verbatim, including the endline and the single-space indentation that starts the second line. Thus, we need to
+    # remove those things ourselves.
+    $rrule = trim(preg_replace('/\s/', '', $vcalendar_component->createRrule()));
+    $rdate = trim(preg_replace('/\s/', '', $vcalendar_component->createRdate()));
+    $exrule = trim(preg_replace('/\s/', '', $vcalendar_component->createExrule()));
+    $exdate = trim(preg_replace('/\s/', '', $vcalendar_component->createExdate()));
 
-    # Due to a bug in iCalcreator 2.20.2, any RRULE that's too long to fit on one line will be returned without
-    # the endline and second-line indentation removed. Thus, we need to do it ourselves.
-    $rrule = preg_replace('/\s/', '', $rrule);
-
-    $rdate = trim($vcalendar_component->createRdate());
-    $exrule = trim($vcalendar_component->createExrule());
-    $exdate = trim($vcalendar_component->createExdate());
     return "$rrule|$rdate|$exrule|$exdate";
   }
 

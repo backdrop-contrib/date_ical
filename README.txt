@@ -19,7 +19,8 @@ Date iCal has several required dependencies, and an optional one:
 To install the iCalcreator library, download the project's v2.20.2 zip file:
 https://github.com/iCalcreator/iCalcreator/archive/e3dbec2cb3bb91a8bde989e467567ae8831a4026.zip
 Extract it, and copy iCalcreator.class.php to a folder in your Drupal site
-named sites/all/libraries/iCalcreator (you'll need to create that folder).
+named sites/all/libraries/iCalcreator (you'll need to create that folder). Be
+sure to capitalize the C in iCalcreator.
 
 Or, if you have drush, you can install iCalcreator by running this command from
 your site's root directory:

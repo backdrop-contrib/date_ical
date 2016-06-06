@@ -133,7 +133,11 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
         if (empty($title)) {
           $title = "Undetermined title";
         }
-        throw new BlankDateFieldException(t("The row titled %title has no available Date value. An iCal entry cannot be created for it.", array('%title' => $title)));
+        throw new BlankDateFieldException(
+          t('The row titled "@title" has no available Date value. An iCal entry cannot be created for it.',
+              array('@title' => $title)
+          )
+        );
       }
       $date = $this->get_row_date($row, $date_field_name);
     }
@@ -173,15 +177,16 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
 
     // Generate a unique ID for this event by emulating the way the Date module
     // creates a Date ID.
+    $is_relationaship = FALSE;
+    $date_field_delta = 0;
     if (isset($row->{"field_data_{$date_field_name}_delta"})) {
       $date_field_delta = $row->{"field_data_{$date_field_name}_delta"};
     }
-    else {
+    else if (!empty($entity->{$date_field_name})) {
       // I'm not sure why the "field_data_{field_name}_delta" field is part of
       // the $row, so it's possible that it will sometimes be missing. If it
       // is, make an educated guess about the delta by comparing this row's
       // start date to each of the entity's dates.
-      $date_field_delta = 0;
       foreach ($entity->{$date_field_name}['und'] as $ndx => $date_array) {
         if ($date['start']->originalTime == $date_array['value']) {
           $date_field_delta = $ndx;
@@ -189,10 +194,29 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
         }
       }
     }
+    else if (!empty($this->display->display_options['fields'][$date_field_name]['relationship'])) {
+      // This block covers another potential situation where
+      // "field_data_{field_name}_delta" is missing: dates gathered through a
+      // relationship. We retrieve the name of the relationship through which
+      // the date field is being gathered, and the delta of that relationship,
+      // in case it's multi-delta.
+      $rel_name = $this->display->display_options['fields'][$date_field_name]['relationship'];
+      $rel_delta = $row->index;
+      $is_relationaship = TRUE;
+    }
+    else {
+      // We couldn't obtain enough info to determine the real $date_field_delta.
+      // So we just leave it as 0. Hopefully this won't cause problems.
+    }
     $entity_id = $row->{$this->view->base_field};
     global $base_url;
     $domain = preg_replace('#^https?://#', '', $base_url);
-    $event['uid'] = "calendar.$entity_id.$date_field_name.$date_field_delta@$domain";
+    if (!$is_relationaship) {
+      $event['uid'] = "calendar.$entity_id.$date_field_name.$date_field_delta@$domain";
+    }
+    else {
+      $event['uid'] = "calendar.$entity_id.$rel_name.$rel_delta.$date_field_name.$date_field_delta@$domain";
+    }
 
     // Because of the way that Date implements repeating dates, we're going to
     // be given a separate view result for each repeat. We only want to

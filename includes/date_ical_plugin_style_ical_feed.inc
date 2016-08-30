@@ -27,7 +27,22 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
     }
     $url_options['absolute'] = TRUE;
 
-    $url = url($this->view->get_url(NULL, $path), $url_options);
+    // Only add arguments to ical path for the contextual filters in the feed display.
+    // Clone view to prevent affecting the page view where this is attached.
+    $clone = $this->view->clone_view();
+    $clone->set_display($this->display->id);
+    $contextual_filters = $clone->get_items('argument');
+    $arg_number = count($contextual_filters);
+
+    // Only include as many arguments as the feed display supports.
+    foreach($clone->args as $key => $arg) {
+      if ($key >= $arg_number) {
+        unset($clone->args[$key]);
+      }
+    }
+
+    $url = url($clone->get_url(NULL, $path), $url_options);
+
     // If the user didn't disable the option, change the scheme to webcal://
     // so calendar clients can automatically subscribe via the iCal link.
     if (!$this->_get_option('disable_webcal')) {

@@ -19,6 +19,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     $options['title_field'] = array('default' => '');
     $options['description_field'] = array('default' => '');
     $options['location_field'] = array('default' => '');
+    $options['categories_field'] = array('default' => '');
     $options['additional_settings']['skip_blank_dates'] = array('default' => FALSE);
     return $options;
   }
@@ -72,6 +73,14 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       '#description' => t('(optional) The views field to use as the location for each event (LOCATION).'),
       '#options' => $text_field_label_options,
       '#default_value' => $this->options['location_field'],
+      '#required' => FALSE,
+    );
+    $form['categories_field'] = array(
+      '#type' => 'select',
+      '#title' => t('Categories field'),
+      '#description' => t('(optional) The views field to use as the categories for each event (CATEGORIES).'),
+      '#options' => $text_field_label_options,
+      '#default_value' => $this->options['categories_field'],
       '#required' => FALSE,
     );
     $form['additional_settings'] = array(
@@ -237,6 +246,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     $text_fields['summary'] = $this->get_field($row->index, $this->options['title_field']);
     $text_fields['description'] = $this->get_field($row->index, $this->options['description_field']);
     $text_fields['location'] = $this->get_field($row->index, $this->options['location_field']);
+    $text_fields['categories'] = $this->get_field($row->index, $this->options['categories_field']);
 
     // Allow other modules to alter the rendered text fields before they get
     // sanitized for iCal-compliance. This is most useful for fields of type
@@ -253,6 +263,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     $event['summary'] = date_ical_sanitize_text($text_fields['summary']);
     $event['location'] = date_ical_sanitize_text($text_fields['location']);
     $event['description'] = date_ical_sanitize_text($text_fields['description']);
+    $event['categories'] = date_ical_sanitize_text($text_fields['categories']);
 
     // Allow other modules to alter the event object before it gets passed to
     // the style plugin to be converted into an iCal VEVENT.

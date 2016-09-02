@@ -353,6 +353,9 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
         if (!empty($event['description'])) {
           $vevent->setDescription($event['description']);
         }
+        if (!empty($event['categories'])) {
+          $vevent->setCategories($event['categories']);
+        }
         if (!empty($event['last-modified'])) {
           $lm = $event['last-modified']->toArray();
           $vevent->setLastModified(

@@ -92,7 +92,7 @@ function theme_date_ical_icon($variables) {
     $variables['tooltip'] = t('Add this event to my calendar');
   }
   $variables['path'] = drupal_get_path('module', 'date_ical') . '/images/ical-feed-icon-34x14.png';
-  $variables['alt'] = $variables['title'] = $variables['tooltip'];
+  $variables['alt'] = $variables['tooltip'];
   if ($image = theme('image', $variables)) {
     return "<a href='{$variables['url']}' class='ical-icon'>$image</a>";
   }

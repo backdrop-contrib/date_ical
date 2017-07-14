@@ -289,8 +289,9 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
             // The spec supports putting multiple date values into one EXDATE,
             // but several popular calendar clients (*cough* Apple *cough*)
             // are bugged, and do not recognize multi-value EXDATEs.
+            $value = $event['all_day'] == 1 ? "DATE" : "DATE-TIME";
             foreach ($exdates as $exdate) {
-              $vevent->setExdate(array($exdate));
+              $vevent->setExdate(array($exdate), array( "VALUE" => $value ));
             }
           }
 

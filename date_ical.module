@@ -113,8 +113,8 @@ function date_ical_preprocess_node(&$variables) {
     // Trick the default node template into not displaying the page title, by
     // telling it that this *is* a page.
     $variables['page'] = TRUE;
-    $variables['title_prefix'] = '';
-    $variables['title_suffix'] = '';
+    $variables['title_prefix'] = [];
+    $variables['title_suffix'] = [];
 
     // We don't want to see the author information in our feed.
     $variables['display_submitted'] = FALSE;

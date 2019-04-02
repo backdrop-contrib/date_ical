@@ -9,3 +9,4 @@ dependencies[] = views
 dependencies[] = entity
 dependencies[] = libraries
 dependencies[] = date
+dependencies[] = entity_plus

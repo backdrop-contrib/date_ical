@@ -312,7 +312,10 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
 
     // Create the rendered event using the display settings from the
     // iCal view mode.
-    $rendered_array = entity_view($this->entity_type, array($entity), 'ical', $this->language, TRUE);
+    // Until #1739 is addressed, we use entity_plus_view() from module entity_plus.
+    // As soon as entity_view() made it into core, the dependency on module
+    // entity_plus is obsolete.
+    $rendered_array = entity_plus_view($this->entity_type, array($entity), 'ical', $this->language, TRUE);
     $data = array(
       'description' => drupal_render($rendered_array),
       'summary' => entity_label($this->entity_type, $entity),

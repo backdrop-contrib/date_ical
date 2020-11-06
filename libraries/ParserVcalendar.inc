@@ -533,7 +533,7 @@ class ParserVcalendar {
     }
 
     // Combine the parts back together with an EXDATE; specifier in front.
-    $exdate = 'EXDATE;' . implode(',', $exdate_parts);
+    $exdate = !empty($exdate_parts) ? 'EXDATE;' . implode(',', $exdate_parts) : '';
 
     return "$rrule|$rdate|$exrule|$exdate";
   }

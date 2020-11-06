@@ -196,10 +196,12 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       // the $row, so it's possible that it will sometimes be missing. If it
       // is, make an educated guess about the delta by comparing this row's
       // start date to each of the entity's dates.
-      foreach ($entity->{$date_field_name}['und'] as $ndx => $date_array) {
-        if ($date['start']->originalTime == $date_array['value']) {
-          $date_field_delta = $ndx;
-          break;
+      if (!empty($entity->{$date_field_name}['und'])) {
+        foreach ($entity->{$date_field_name}['und'] as $ndx => $date_array) {
+          if ($date['start']->originalTime == $date_array['value']) {
+            $date_field_delta = $ndx;
+            break;
+          }
         }
       }
     }

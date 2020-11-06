@@ -49,8 +49,9 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       $url = str_replace(array('http://', 'https://'), 'webcal://', $url);
     }
 
-    // Render the feed icon and header tag (except during a View Preview).
-    if (empty($this->view->live_preview)) {
+    // Render the feed icon and header tag (except during a View Preview and
+    // if the display is disabled).
+    if (empty($this->view->live_preview) && (!isset($this->display->display_options['enabled']) || $this->display->display_options['enabled'])) {
       $tooltip = t('Add to My Calendar');
       if (!isset($this->view->feed_icon)) {
         // In PHP 5.5, you're not allowed to concatinate onto an unset

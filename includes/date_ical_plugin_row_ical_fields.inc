@@ -164,8 +164,9 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
     // Create the event by starting with the date array from this row.
     $event = $date;
 
-    $entity = $row->_field_data[$this->view->base_field]['entity'];
-    $entity_type = $row->_field_data[$this->view->base_field]['entity_type'];
+    $field = $this->view->field[$date_field_name];
+    $entity = $row->_field_data[$field->field_alias]['entity'];
+    $entity_type = $row->_field_data[$field->field_alias]['entity_type'];
     // Add the CREATED, LAST-MODIFIED, and URL components based on the entity.
     // According to the iCal standard, CREATED and LAST-MODIFIED must be UTC.
     // Fortunately, Drupal stores timestamps in the DB as UTC, so we just need
@@ -219,7 +220,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       // We couldn't obtain enough info to determine the real $date_field_delta.
       // So we just leave it as 0. Hopefully this won't cause problems.
     }
-    $entity_id = $row->{$this->view->base_field};
+    $entity_id = $row->{$field->field_alias};
     global $base_url;
     $domain = preg_replace('#^https?://#', '', $base_url);
     if (!$is_relationaship) {

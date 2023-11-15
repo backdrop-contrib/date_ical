@@ -382,6 +382,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       $handler_class = get_class($handlers[$alias]);
       if ($handler_class == 'views_handler_field_date'
           || ($handler_class == 'views_handler_field_field'
+          || $handler_class == 'entity_views_handler_field_field'
             && in_array($handlers[$alias]->field_info['type'], $date_fields))) {
         $field_candidates[$alias] = $label;
       }

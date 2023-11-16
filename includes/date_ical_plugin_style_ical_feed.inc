@@ -470,7 +470,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       $value = $this->view->field[$field]->get_value($this->view->result[$index]);
       unset($this->view->row_index);
     }
-    if ($field->field_info['cardinality'] == '1') {
+    if (isset($field->field_info['cardinality']) && $field->field_info['cardinality'] == '1') {
       $value = array($value);
     }
 

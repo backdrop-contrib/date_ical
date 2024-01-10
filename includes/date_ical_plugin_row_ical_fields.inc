@@ -223,7 +223,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
       'language' => $this->language,
       'options' => $this->options,
     );
-    drupal_alter('date_ical_export_html', $text_fields, $this->view, $context);
+    backdrop_alter('date_ical_export_html', $text_fields, $this->view, $context);
 
     // Sanitize the text fields for iCal compliance, and add them to the event.
     $event['summary'] = date_ical_sanitize_text($text_fields['summary']);
@@ -232,7 +232,7 @@ class date_ical_plugin_row_ical_fields extends views_plugin_row {
 
     // Allow other modules to alter the event object before it gets passed to
     // the style plugin to be converted into an iCal VEVENT.
-    drupal_alter('date_ical_export_raw_event', $event, $this->view, $context);
+    backdrop_alter('date_ical_export_raw_event', $event, $this->view, $context);
 
     return $event;
   }

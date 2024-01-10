@@ -9,7 +9,7 @@
  * Implements hook_views_plugins().
  */
 function date_ical_views_plugins() {
-  $includes_path = drupal_get_path('module', 'date_ical') . '/includes';
+  $includes_path = backdrop_get_path('module', 'date_ical') . '/includes';
 
   $data = array(
     'module' => 'date_ical',

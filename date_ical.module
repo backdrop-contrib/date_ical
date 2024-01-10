@@ -53,7 +53,7 @@ function date_ical_hook_info() {
 function date_ical_views_api() {
   return array(
     'api' => 3,
-    'path' => drupal_get_path('module', 'date_ical') . '/includes',
+    'path' => backdrop_get_path('module', 'date_ical') . '/includes',
   );
 }
 
@@ -61,7 +61,7 @@ function date_ical_views_api() {
  * Implements hook_feeds_plugins().
  */
 function date_ical_feeds_plugins() {
-  $path = drupal_get_path('module', 'date_ical') . '/includes';
+  $path = backdrop_get_path('module', 'date_ical') . '/includes';
   $info = array();
   $info['DateiCalFeedsParser'] = array(
     'name' => 'iCal parser',
@@ -100,7 +100,7 @@ function theme_date_ical_icon($variables) {
   if (empty($variables['tooltip'])) {
     $variables['tooltip'] = t('Add this event to my calendar');
   }
-  $variables['path'] = drupal_get_path('module', 'date_ical') . '/images/ical-feed-icon-34x14.png';
+  $variables['path'] = backdrop_get_path('module', 'date_ical') . '/images/ical-feed-icon-34x14.png';
   $variables['alt'] = $variables['title'] = $variables['tooltip'];
   if ($image = theme('image', $variables)) {
     return "<a href='{$variables['url']}' class='ical-icon'>$image</a>";
@@ -187,7 +187,7 @@ function date_ical_libraries_info() {
 function date_ical_help($path, $arg) {
   switch ($path) {
     case 'admin/help#date_ical':
-      return '<pre>' . file_get_contents(drupal_get_path('module', 'date_ical') . "/README.txt") . '</pre>';
+      return '<pre>' . file_get_contents(backdrop_get_path('module', 'date_ical') . "/README.txt") . '</pre>';
   }
 }
 

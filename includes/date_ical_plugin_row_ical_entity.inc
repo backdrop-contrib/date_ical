@@ -257,7 +257,7 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
           $locations = array();
           // Get full country name
           if (!empty($location_field['country'])) {
-            require_once DRUPAL_ROOT . '/includes/locale.inc';
+            require_once BACKDROP_ROOT . '/includes/locale.inc';
             $countries = country_get_list();
             $location_field['country'] = $countries[$location_field['country']];
           }
@@ -314,7 +314,7 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
     // iCal view mode.
     $rendered_array = entity_view($this->entity_type, array($entity), 'ical', $this->language, TRUE);
     $data = array(
-      'description' => drupal_render($rendered_array),
+      'description' => backdrop_render($rendered_array),
       'summary' => entity_label($this->entity_type, $entity),
     );
     if (!empty($this->options['summary_field']) && $this->options['summary_field'] != 'default_title') {
@@ -358,7 +358,7 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
       'entity_type' => $this->entity_type,
       'language' => $this->language,
     );
-    drupal_alter('date_ical_export_html', $data, $this->view, $context);
+    backdrop_alter('date_ical_export_html', $data, $this->view, $context);
 
     $event = array();
     $event['summary'] = date_ical_sanitize_text($data['summary']);
@@ -405,7 +405,7 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
 
     // Allow other modules to alter the structured event object, before it gets
     // passed to the style plugin to be converted into an iCalcreator vevent.
-    drupal_alter('date_ical_export_raw_event', $event, $this->view, $context);
+    backdrop_alter('date_ical_export_raw_event', $event, $this->view, $context);
 
     return $event;
   }

@@ -49,7 +49,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
         'view' => $this->view,
       );
       $this->view->feed_icon .= theme('date_ical_icon', $variables);
-      drupal_add_html_head_link(array(
+      backdrop_add_html_head_link(array(
         'rel' => 'alternate',
         'type' => 'text/calendar',
         'title' => $tooltip,
@@ -364,7 +364,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
         }
 
         // Allow other modules to alter the vevent before it's exported.
-        drupal_alter('date_ical_export_vevent', $vevent, $this->view, $event);
+        backdrop_alter('date_ical_export_vevent', $vevent, $this->view, $event);
       }
 
       // Now add to the calendar all the timezones used by the events.
@@ -375,7 +375,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       }
 
       // Allow other modules to alter the vcalendar before it's exported.
-      drupal_alter('date_ical_export_vcalendar', $vcalendar, $this->view);
+      backdrop_alter('date_ical_export_vcalendar', $vcalendar, $this->view);
 
       $output = $vcalendar->createCalendar();
       // iCalcreator escapes all commas and semicolons in string values, as the
@@ -411,9 +411,9 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       // Prevent devel module from appending queries to ical export.
       $GLOBALS['devel_shutdown'] = FALSE;
 
-      drupal_add_http_header('Content-Type', 'text/calendar; charset=UTF-8');
-      drupal_add_http_header('Cache-Control', 'no-cache, must-revalidate');
-      drupal_add_http_header('Expires', 'Sat, 26 Jul 1997 05:00:00 GMT');
+      backdrop_add_http_header('Content-Type', 'text/calendar; charset=UTF-8');
+      backdrop_add_http_header('Cache-Control', 'no-cache, must-revalidate');
+      backdrop_add_http_header('Expires', 'Sat, 26 Jul 1997 05:00:00 GMT');
 
       // For sites with Clean URLs disabled, the Display's "path" value ends
       // up only in the query args, meaning the filename won't be set properly
@@ -422,12 +422,12 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       if (!variable_get('clean_url', FALSE)) {
         $path_array = explode('/', $this->display->display_options['path']);
         $filename = end($path_array);
-        drupal_add_http_header('Content-Disposition', "attachment; filename=\"$filename\"");
+        backdrop_add_http_header('Content-Disposition', "attachment; filename=\"$filename\"");
       }
     }
 
     // Allow other modules to alter the rendered calendar.
-    drupal_alter('date_ical_export_post_render', $output, $this->view);
+    backdrop_alter('date_ical_export_post_render', $output, $this->view);
 
     return $output;
   }

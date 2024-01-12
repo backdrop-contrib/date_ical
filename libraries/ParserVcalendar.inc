@@ -286,7 +286,7 @@ class ParserVcalendar {
   /**
    * Handler that parses DATE-TIME and DATE fields.
    *
-   * @return FeedsDateTime
+   * @return BackdropDateTime
    *   The parsed datetime object.
    */
   public function parseDateTimeProperty($property_key, $vcalendar_component) {
@@ -355,14 +355,14 @@ class ParserVcalendar {
 
         if (module_exists('date_all_day')) {
           // If the Date All Day module is installed, we need to rewind the
-          // DTEND by one day, because of the problem with FeedsDateTime
+          // DTEND by one day, because of the problem with BackdropDateTime
           // mentioned below.
           $prev_day = iCalUtilityFunctions::_duration2date($property['value'], array('day' => -1));
           $property['value'] = $prev_day;
         }
       }
 
-      // FeedsDateTime->setTimezone() ignores timezone changes made to dates
+      // BackdropDateTime->setTimezone() ignores timezone changes made to dates
       // with no time element, which means we can't compensate for the Date
       // module's automatic timezone conversion when it writes to the DB. To
       // get around that, we must add 00:00:00 explicitly, even though this
@@ -413,7 +413,7 @@ class ParserVcalendar {
       }
     }
 
-    $datetime = new FeedsDateTime($date_string, $datetimezone);
+    $datetime = new BackdropDateTime($date_string, $datetimezone);
     return $datetime;
   }
 
@@ -591,7 +591,7 @@ class ParserVcalendar {
       return FALSE;
     }
     $compare_date = isset($this->parsed_data['DTEND']) ? $this->parsed_data['DTEND'] : $this->parsed_data['DTSTART'];
-    $skip_date = new FeedsDateTime("today -{$this->config['skip_days']} days", $compare_date->getTimezone());
+    $skip_date = new BackdropDateTime("today -{$this->config['skip_days']} days", $compare_date->getTimezone());
     $skip = ($skip_date > $compare_date);
     return $skip;
   }

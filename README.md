@@ -8,35 +8,7 @@ the source/target to export/import an iCal feed.
 Installation
 ------------
 
-- Install this module using the official Backdrop CMS instructions at
-  https://backdropcms.org/guide/modules
-
-Date iCal has several required dependencies, and an optional one:
-- The Views, Entity API, Libraries API, and Date modules are required.
-- The iCalcreator library v2.20.2 is required.
-- PHP 5.3 is required for the iCalcreator library to properly handle timezones.
-
-To install the iCalcreator library, download the project's v2.20.2 zip file:
-https://github.com/iCalcreator/iCalcreator/archive/e3dbec2cb3bb91a8bde989e467567ae8831a4026.zip
-Extract it, and copy iCalcreator.class.php to a folder in your Drupal site
-named sites/libraries/iCalcreator (you'll need to create that folder).
-
-Or, if you have drush, you can install iCalcreator by running this command from
-your site's root directory:
-drush make sites/modules/date_ical/date_ical.make --no-core
-
-Then, clear the cache on your site by using either "drush cc all" or logging in
-to your site and going to Configuration -> Development -> Performance and click
-the "Clear all caches" button. This is necessary because libraries are cached,
-and you may see confusing behavior from Date iCal if the iCalcreator library
-gets cached at a bad time.
-
-To confirm that iCalcreator is installed correctly, log in to your Drupal site
-and navigate to the admin/reports/status page. If the row titled "Date iCal" is
-green, Date iCal is ready to go. If it's red, the iCalcreator library is not
-properly installed. If it's missing, you'll need to enable Date iCal.
-
-
+- Install this module using [the official Backdrop CMS instructions](https://backdropcms.org/guide/modules).
 
 EXPORTING AN ICAL FEED USING Views
 ----------------------------------
@@ -239,19 +211,10 @@ Developers who wish to implement more powerful manipulation of event data can
 read the date_ical.api.php file to learn about the various alter hooks that
 date_ical exposes.
 
-The libraries/windowsZones.json file, which Date iCal uses to map Windows-style
-timezone names to real timezone IDs, is from Version24 of the Unicode CLDR:
-http://cldr.unicode.org/.
-
-The author of iCalcreator made extenside backwards incompatible changes to the
-library in the v2.22 release. Thus Date iCal does not support any version of
-iCalcreator after v2.20.2.
-
 Issues
 ------
 
-Bugs and Feature requests should be reported in the Issue Queue:
-https://github.com/sd-backdrop/date_format_help/issues
+Bugs and Feature requests should be reported in the [Issue Queue](https://github.com/backdrop-contrib/date_ical/issues).
 
 Current Maintainers
 -------------------
@@ -262,9 +225,20 @@ Current Maintainers
 Credits
 -------
 
-- Ported to Backdrop CMS by John Franklin (https://github.com/sentaidigital).
-- Originally written for Drupal by Karen Stevenson (https://www.drupal.org/u/karens)
-  and coredumperror (https://www.drupal.org/u/coredumperror).
+- Ported to Backdrop CMS by [John Franklin](https://github.com/sentaidigital).
+- Originally written for Drupal by [Karen Stevenson](https://www.drupal.org/u/karens)
+  and [coredumperror](https://www.drupal.org/u/coredumperror).
+- The `libraries/windowsZones.json` file, which Date iCal uses to map
+  Windows-style timezone names to real timezone IDs, is from Version24 of the
+  (Unicode CLDR)[https://cldr.unicode.org/].
+- This module bundles [a version of iCalcreator v2.20.x](https://github.com/joejoseph00/iCalcreator)
+  with PHP 8.1 compatibility fixes by @joejoseph00 and @lkmorlan. This library
+  was released under LGPL-2.1.
+- The original [iCalcreator project]() is here. iCalcreator v2.22 introduced
+  extensive backwards-incompatible changes to the library, so Date iCal does not
+  [currently](https://github.com/backdrop-contrib/date_ical/issues/8#issuecomment-1889698040)
+  support any version of iCalcreator after v2.20.x.
+
 
 License
 -------

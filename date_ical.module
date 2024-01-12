@@ -26,6 +26,16 @@ function date_ical_autoload_info() {
     'date_ical_plugin_row_ical_fields' => 'includes/date_ical_plugin_row_ical_fields.inc',
     'date_ical_plugin_style_ical_feed' => 'includes/date_ical_plugin_style_ical_feed.inc',
     'DateiCalFeedsParser' => 'includes/DateiCalFeedsParser.inc',
+    'vcalendar' => 'libraries/iCalcreator/iCalcreator.class.php',
+    'calendarComponent' => 'libraries/iCalcreator/iCalcreator.class.php',
+    'vevent' => 'libraries/iCalcreator/iCalcreator.class.php',
+    'vtodo' => 'libraries/iCalcreator/iCalcreator.class.php',
+    'vjournal' => 'libraries/iCalcreator/iCalcreator.class.php',
+    'vfreebusy' => 'libraries/iCalcreator/iCalcreator.class.php',
+    'valarm' => 'libraries/iCalcreator/iCalcreator.class.php',
+    'vtimezone' => 'libraries/iCalcreator/iCalcreator.class.php',
+    'iCalUtilityFunctions' => 'libraries/iCalcreator/iCalcreator.class.php',
+    'ParserVcalendar' => 'libraries/ParserVcalendar.inc',
   );
 }
 
@@ -158,27 +168,6 @@ function date_ical_entity_info_alter(&$entity_info) {
       ),
     );
   }
-}
-
-/**
- * Implements hook_libraries_info().
- */
-function date_ical_libraries_info() {
-  $libraries['iCalcreator'] = array(
-    'name' => 'iCalcreator',
-    'vendor url' => 'http://github.com/iCalcreator/iCalcreator',
-    'download url' => 'http://github.com/iCalcreator/iCalcreator',
-    'version arguments' => array(
-      'file' => 'iCalcreator.class.php',
-      'pattern' => "/define.*?ICALCREATOR_VERSION.*?([\d\.]+)/",
-      'lines' => 100,
-    ),
-    'files' => array(
-      'php' => array('iCalcreator.class.php'),
-    ),
-  );
-
-  return $libraries;
 }
 
 /**

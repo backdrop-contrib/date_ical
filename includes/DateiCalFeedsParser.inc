@@ -17,10 +17,6 @@ class DateiCalFeedsParser extends FeedsParser {
    * Implements FeedsParser::parse().
    */
   public function parse(FeedsSource $source, FeedsFetcherResult $fetcher_result) {
-    $library = libraries_load('iCalcreator');
-    if (!$library['loaded']) {
-      throw new DateIcalException(t('Unable to load the iCalcreator library. Please ensure that it is properly installed.'));
-    }
     $state = $source->state(FEEDS_PARSE);
 
     // Read the iCal feed into memory.
@@ -49,7 +45,6 @@ class DateiCalFeedsParser extends FeedsParser {
     // We've got a vcalendar object created from the feed data. Now we need to
     // convert that vcalendar into an array of Feeds-compatible data arrays.
     // ParserVcalendar->parse() does that.
-    require_once BACKDROP_ROOT . '/' . backdrop_get_path('module', 'date_ical') . '/libraries/ParserVcalendar.inc';
     $parser = new ParserVcalendar($calendar, $source, $fetcher_result, $source->getConfigFor($this));
 
     // Using the stored progress pointer (or 0 if it's not set),

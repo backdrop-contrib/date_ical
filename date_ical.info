@@ -1,11 +1,8 @@
 name = Date iCal
 description = Enables export of iCal feeds using Views, and import of iCal feeds using Feeds.
 package = Date/Time
-php = 5.3
-core = 7.x
 backdrop = 1.x
 type = module
 dependencies[] = views
 dependencies[] = entity
-dependencies[] = libraries
 dependencies[] = date

@@ -149,261 +149,253 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
     }
     unset($this->view->row_index);
 
-    // Try to load the iCalcreator library.
-    $library = libraries_load('iCalcreator');
-    if (!$library['loaded']) {
-      // The iCalcreator library isn't available, so we can't output anything.
-      $output = t('Please install the iCalcreator library to enable iCal output.');
-    }
-    else {
-      // Create a vcalendar object using the iCalcreator library.
-      $config = array('unique_id' => 'Date iCal');
-      $vcalendar = new vcalendar($config);
-      $vcalendar->setMethod('PUBLISH');
+    // Create a vcalendar object using the iCalcreator library.
+    $config = array('unique_id' => 'Date iCal');
+    $vcalendar = new vcalendar($config);
+    $vcalendar->setMethod('PUBLISH');
 
-      // Only include the X-WR-CALNAME property if the user didn't enable
-      // the "Exclude Calendar Name" option.
-      if (!$this->_get_option('no_calname')) {
-        $cal_name = $this->_get_option('cal_name');
+    // Only include the X-WR-CALNAME property if the user didn't enable
+    // the "Exclude Calendar Name" option.
+    if (!$this->_get_option('no_calname')) {
+      $cal_name = $this->_get_option('cal_name');
+      if (empty($cal_name)) {
+        $cal_name = $this->view->get_title();
         if (empty($cal_name)) {
-          $cal_name = $this->view->get_title();
-          if (empty($cal_name)) {
-            $cal_name = variable_get('site_name', 'Drupal');
-          }
-        }
-        if (!empty($cal_name)) {
-          $vcalendar->setProperty('X-WR-CALNAME', $cal_name, array('VALUE' => 'TEXT'));
+          $cal_name = variable_get('site_name', 'Drupal');
         }
       }
+      if (!empty($cal_name)) {
+        $vcalendar->setProperty('X-WR-CALNAME', $cal_name, array('VALUE' => 'TEXT'));
+      }
+    }
 
-      // Now add the VEVENTs.
-      $timezones = array();
-      foreach ($events as $event) {
-        if (empty($event)) {
-          // The row plugin returned NULL for this row, which can happen due to
-          // either various error conditions, or because an RRULE is involved.
-          // When this happens, just skip it.
-          continue;
-        }
+    // Now add the VEVENTs.
+    $timezones = array();
+    foreach ($events as $event) {
+      if (empty($event)) {
+        // The row plugin returned NULL for this row, which can happen due to
+        // either various error conditions, or because an RRULE is involved.
+        // When this happens, just skip it.
+        continue;
+      }
 
-        $vevent = $vcalendar->newComponent('vevent');
-        $vevent->setUid($event['uid']);
-        $vevent->setSummary($event['summary']);
+      $vevent = $vcalendar->newComponent('vevent');
+      $vevent->setUid($event['uid']);
+      $vevent->setSummary($event['summary']);
 
-        // Get the start date as an array.
-        $start = $event['start']->toArray();
-        $start_timezone = $event['start']->getTimezone()->getName();
-        $timezones[$start_timezone] = $start_timezone;
+      // Get the start date as an array.
+      $start = $event['start']->toArray();
+      $start_timezone = $event['start']->getTimezone()->getName();
+      $timezones[$start_timezone] = $start_timezone;
+
+      if ($event['all_day']) {
+        // All Day events need to be DATEs, rather than DATE-TIMEs.
+        $vevent->setDtstart($start['year'], $start['month'], $start['day'],
+          FALSE, FALSE, FALSE, FALSE, array('VALUE' => 'DATE'));
+      }
+      else {
+        $vevent->setDtstart(
+          $start['year'],
+          $start['month'],
+          $start['day'],
+          $start['hour'],
+          $start['minute'],
+          $start['second'],
+          $start_timezone
+        );
+      }
+
+      // Add the Timezone info to the start date, for use later.
+      $start['tz'] = $event['start']->getTimezone();
+
+      // Only add the end date if there is one.
+      if (!empty($event['end'])) {
+        $end = $event['end']->toArray();
+        $end_timezone = $event['end']->getTimezone()->getName();
+        $timezones[$end_timezone] = $end_timezone;
 
         if ($event['all_day']) {
-          // All Day events need to be DATEs, rather than DATE-TIMEs.
-          $vevent->setDtstart($start['year'], $start['month'], $start['day'],
+          $vevent->setDtend($end['year'], $end['month'], $end['day'],
             FALSE, FALSE, FALSE, FALSE, array('VALUE' => 'DATE'));
         }
         else {
-          $vevent->setDtstart(
-            $start['year'],
-            $start['month'],
-            $start['day'],
-            $start['hour'],
-            $start['minute'],
-            $start['second'],
-            $start_timezone
+          $vevent->setDtend(
+            $end['year'],
+            $end['month'],
+            $end['day'],
+            $end['hour'],
+            $end['minute'],
+            $end['second'],
+            $end_timezone
           );
         }
+        $end['tz'] = $event['end']->getTimezone();
+      }
 
-        // Add the Timezone info to the start date, for use later.
-        $start['tz'] = $event['start']->getTimezone();
+      // Handle repeating dates from the date_repeat module.
+      if (!empty($event['rrule']) && module_exists('date_repeat')) {
+        // Split the rrule into an RRULE and any additions and exceptions.
+        module_load_include('inc', 'date_api', 'date_api_ical');
+        module_load_include('inc', 'date_repeat', 'date_repeat_calc');
+        list($rrule, $exceptions, $additions) = date_repeat_split_rrule($event['rrule']);
 
-        // Only add the end date if there is one.
-        if (!empty($event['end'])) {
-          $end = $event['end']->toArray();
-          $end_timezone = $event['end']->getTimezone()->getName();
-          $timezones[$end_timezone] = $end_timezone;
+        // Add the RRULE itself. We need to massage the data a bit, since
+        // iCalcreator expects RRULEs to be in a different format than how
+        // Date API gives them to us.
+        $vevent->setRrule(_date_ical_convert_rrule_for_icalcreator($rrule));
 
-          if ($event['all_day']) {
-            $vevent->setDtend($end['year'], $end['month'], $end['day'],
-              FALSE, FALSE, FALSE, FALSE, array('VALUE' => 'DATE'));
-          }
-          else {
-            $vevent->setDtend(
-              $end['year'],
-              $end['month'],
-              $end['day'],
-              $end['hour'],
-              $end['minute'],
-              $end['second'],
-              $end_timezone
+        // Convert any exceptions to EXDATE properties.
+        if (!empty($exceptions)) {
+          $exdates = array();
+          foreach ($exceptions as $exception) {
+            $except = date_ical_date($exception, 'UTC');
+            $except->setTimezone($start['tz']);
+            $exception_array = $except->toArray();
+            $exdates[] = array(
+              'year' =>  $exception_array['year'],
+              'month' => $exception_array['month'],
+              'day' =>   $exception_array['day'],
+              // Use the time information from the start date, since Date
+              // doesn't store time info for EXDATEs.
+              'hour' =>   $start['hour'],
+              'min' =>    $start['minute'],
+              'second' => $start['second'],
+              'tz' =>     $start['tz']->getName(),
             );
           }
-          $end['tz'] = $event['end']->getTimezone();
+          // Add each exclusion as a separate EXDATE property.
+          // The spec supports putting multiple date values into one EXDATE,
+          // but several popular calendar clients (*cough* Apple *cough*)
+          // are bugged, and do not recognize multi-value EXDATEs.
+          foreach ($exdates as $exdate) {
+            $vevent->setExdate(array($exdate));
+          }
         }
 
-        // Handle repeating dates from the date_repeat module.
-        if (!empty($event['rrule']) && module_exists('date_repeat')) {
-          // Split the rrule into an RRULE and any additions and exceptions.
-          module_load_include('inc', 'date_api', 'date_api_ical');
-          module_load_include('inc', 'date_repeat', 'date_repeat_calc');
-          list($rrule, $exceptions, $additions) = date_repeat_split_rrule($event['rrule']);
+        // Convert any additions to RDATE properties.
+        if (!empty($additions)) {
+          $rdates = array();
+          foreach ($additions as $addition) {
+            $add = date_ical_date($addition, 'UTC');
+            $add->setTimezone($start['tz']);
+            $addition_array = $add->toArray();
 
-          // Add the RRULE itself. We need to massage the data a bit, since
-          // iCalcreator expects RRULEs to be in a different format than how
-          // Date API gives them to us.
-          $vevent->setRrule(_date_ical_convert_rrule_for_icalcreator($rrule));
+            $rdate = array(
+              'year' =>  $addition_array['year'],
+              'month' => $addition_array['month'],
+              'day' =>   $addition_array['day'],
+              // If the user's copy of Date has support for time in RDATEs,
+              // use that. Otherwise use the time from the start date.
+              'hour' =>   !empty($addition_array['hour']) ? $addition_array['hour'] : $start['hour'],
+              'min' =>    !empty($addition_array['minute']) ? $addition_array['minute'] : $start['minute'],
+              'second' => !empty($addition_array['second']) ? $addition_array['second'] : $start['second'],
+              'tz' =>     $start['tz']->getName(),
+            );
 
-          // Convert any exceptions to EXDATE properties.
-          if (!empty($exceptions)) {
-            $exdates = array();
-            foreach ($exceptions as $exception) {
-              $except = date_ical_date($exception, 'UTC');
-              $except->setTimezone($start['tz']);
-              $exception_array = $except->toArray();
-              $exdates[] = array(
-                'year' =>  $exception_array['year'],
-                'month' => $exception_array['month'],
-                'day' =>   $exception_array['day'],
-                // Use the time information from the start date, since Date
-                // doesn't store time info for EXDATEs.
-                'hour' =>   $start['hour'],
-                'min' =>    $start['minute'],
-                'second' => $start['second'],
-                'tz' =>     $start['tz']->getName(),
-              );
-            }
-            // Add each exclusion as a separate EXDATE property.
-            // The spec supports putting multiple date values into one EXDATE,
-            // but several popular calendar clients (*cough* Apple *cough*)
-            // are bugged, and do not recognize multi-value EXDATEs.
-            foreach ($exdates as $exdate) {
-              $vevent->setExdate(array($exdate));
-            }
-          }
-
-          // Convert any additions to RDATE properties.
-          if (!empty($additions)) {
-            $rdates = array();
-            foreach ($additions as $addition) {
-              $add = date_ical_date($addition, 'UTC');
-              $add->setTimezone($start['tz']);
-              $addition_array = $add->toArray();
-
-              $rdate = array(
+            // If an end date was was calculated above, use that too.
+            // iCalcreator expects RDATEs that have end dates to be
+            // specified as array($start_rdate, $end_rdate).
+            if (isset($end)) {
+              $rdate_with_end = array($rdate);
+              $rdate_with_end[] = array(
                 'year' =>  $addition_array['year'],
                 'month' => $addition_array['month'],
                 'day' =>   $addition_array['day'],
                 // If the user's copy of Date has support for time in RDATEs,
-                // use that. Otherwise use the time from the start date.
-                'hour' =>   !empty($addition_array['hour']) ? $addition_array['hour'] : $start['hour'],
-                'min' =>    !empty($addition_array['minute']) ? $addition_array['minute'] : $start['minute'],
-                'second' => !empty($addition_array['second']) ? $addition_array['second'] : $start['second'],
-                'tz' =>     $start['tz']->getName(),
+                // use that. Otherwise use the time from the end date.
+                'hour' =>   !empty($addition_array['hour']) ? $addition_array['hour'] : $end['hour'],
+                'min' =>    !empty($addition_array['minute']) ? $addition_array['minute'] : $end['minute'],
+                'second' => !empty($addition_array['second']) ? $addition_array['second'] : $end['second'],
+                'tz' =>     $end['tz']->getName(),
               );
-
-              // If an end date was was calculated above, use that too.
-              // iCalcreator expects RDATEs that have end dates to be
-              // specified as array($start_rdate, $end_rdate).
-              if (isset($end)) {
-                $rdate_with_end = array($rdate);
-                $rdate_with_end[] = array(
-                  'year' =>  $addition_array['year'],
-                  'month' => $addition_array['month'],
-                  'day' =>   $addition_array['day'],
-                  // If the user's copy of Date has support for time in RDATEs,
-                  // use that. Otherwise use the time from the end date.
-                  'hour' =>   !empty($addition_array['hour']) ? $addition_array['hour'] : $end['hour'],
-                  'min' =>    !empty($addition_array['minute']) ? $addition_array['minute'] : $end['minute'],
-                  'second' => !empty($addition_array['second']) ? $addition_array['second'] : $end['second'],
-                  'tz' =>     $end['tz']->getName(),
-                );
-                $rdate = $rdate_with_end;
-              }
-
-              $rdates[] = $rdate;
+              $rdate = $rdate_with_end;
             }
-            // Add each addition as a separate RDATE property.
-            // The spec supports putting multiple date values into one RDATE,
-            // but several popular calendar clients (*cough* Apple *cough*)
-            // are bugged, and do not recognize multi-value RDATEs.
-            foreach ($rdates as $rdate) {
-              $vevent->setRdate(array($rdate));
-            }
+
+            $rdates[] = $rdate;
+          }
+          // Add each addition as a separate RDATE property.
+          // The spec supports putting multiple date values into one RDATE,
+          // but several popular calendar clients (*cough* Apple *cough*)
+          // are bugged, and do not recognize multi-value RDATEs.
+          foreach ($rdates as $rdate) {
+            $vevent->setRdate(array($rdate));
           }
         }
-        if (!empty($event['url'])) {
-          $vevent->setUrl($event['url'], array('type' => 'URI'));
-        }
-        if (!empty($event['location'])) {
-          $vevent->setLocation($event['location']);
-        }
-        if (!empty($event['description'])) {
-          $vevent->setDescription($event['description']);
-        }
-        if (!empty($event['last-modified'])) {
-          $lm = $event['last-modified']->toArray();
-          $vevent->setLastModified(
-            $lm['year'],
-            $lm['month'],
-            $lm['day'],
-            $lm['hour'],
-            $lm['minute'],
-            $lm['second'],
-            $lm['timezone']
-          );
-        }
-        if (!empty($event['created'])) {
-          $created = $event['created']->toArray();
-          $vevent->setCreated(
-            $created['year'],
-            $created['month'],
-            $created['day'],
-            $created['hour'],
-            $created['minute'],
-            $created['second'],
-            $created['timezone']
-          );
-        }
-
-        // Allow other modules to alter the vevent before it's exported.
-        backdrop_alter('date_ical_export_vevent', $vevent, $this->view, $event);
+      }
+      if (!empty($event['url'])) {
+        $vevent->setUrl($event['url'], array('type' => 'URI'));
+      }
+      if (!empty($event['location'])) {
+        $vevent->setLocation($event['location']);
+      }
+      if (!empty($event['description'])) {
+        $vevent->setDescription($event['description']);
+      }
+      if (!empty($event['last-modified'])) {
+        $lm = $event['last-modified']->toArray();
+        $vevent->setLastModified(
+          $lm['year'],
+          $lm['month'],
+          $lm['day'],
+          $lm['hour'],
+          $lm['minute'],
+          $lm['second'],
+          $lm['timezone']
+        );
+      }
+      if (!empty($event['created'])) {
+        $created = $event['created']->toArray();
+        $vevent->setCreated(
+          $created['year'],
+          $created['month'],
+          $created['day'],
+          $created['hour'],
+          $created['minute'],
+          $created['second'],
+          $created['timezone']
+        );
       }
 
-      // Now add to the calendar all the timezones used by the events.
-      foreach ($timezones as $timezone) {
-        if (strtoupper($timezone) != 'UTC') {
-          iCalUtilityFunctions::createTimezone($vcalendar, $timezone);
+      // Allow other modules to alter the vevent before it's exported.
+      backdrop_alter('date_ical_export_vevent', $vevent, $this->view, $event);
+    }
+
+    // Now add to the calendar all the timezones used by the events.
+    foreach ($timezones as $timezone) {
+      if (strtoupper($timezone) != 'UTC') {
+        iCalUtilityFunctions::createTimezone($vcalendar, $timezone);
+      }
+    }
+
+    // Allow other modules to alter the vcalendar before it's exported.
+    backdrop_alter('date_ical_export_vcalendar', $vcalendar, $this->view);
+
+    $output = $vcalendar->createCalendar();
+    // iCalcreator escapes all commas and semicolons in string values, as the
+    // spec demands. However, some calendar clients are buggy and fail to
+    // unescape these characters. Users may choose to unescape them here to
+    // sidestep those clients' bugs.
+    // NOTE: This results in a non-compliant iCal feed, but it seems like a
+    // LOT of major clients are bugged this way.
+    if ($this->_get_option('unescape_punctuation')) {
+      $output = str_replace('\,', ',', $output);
+      $output = str_replace('\;', ';', $output);
+    }
+
+    // In order to respect the Exclude DTSTAMP option, we unfortunately have
+    // to parse out the DTSTAMP properties after they get rendered. Simply
+    // using deleteProperty('DTSTAMP') doesn't work, because iCalcreator
+    // considers the DTSTAMP to be essential, and will re-create it when
+    // createCalendar() is called.
+    if ($this->_get_option('exclude_dtstamp')) {
+      $filtered_lines = array();
+      foreach (explode("\r\n", $output) as $line) {
+        if (strpos($line, 'DTSTAMP') === 0) {
+          continue;
         }
+        $filtered_lines[] = $line;
       }
-
-      // Allow other modules to alter the vcalendar before it's exported.
-      backdrop_alter('date_ical_export_vcalendar', $vcalendar, $this->view);
-
-      $output = $vcalendar->createCalendar();
-      // iCalcreator escapes all commas and semicolons in string values, as the
-      // spec demands. However, some calendar clients are buggy and fail to
-      // unescape these characters. Users may choose to unescape them here to
-      // sidestep those clients' bugs.
-      // NOTE: This results in a non-compliant iCal feed, but it seems like a
-      // LOT of major clients are bugged this way.
-      if ($this->_get_option('unescape_punctuation')) {
-        $output = str_replace('\,', ',', $output);
-        $output = str_replace('\;', ';', $output);
-      }
-
-      // In order to respect the Exclude DTSTAMP option, we unfortunately have
-      // to parse out the DTSTAMP properties after they get rendered. Simply
-      // using deleteProperty('DTSTAMP') doesn't work, because iCalcreator
-      // considers the DTSTAMP to be essential, and will re-create it when
-      // createCalendar() is called.
-      if ($this->_get_option('exclude_dtstamp')) {
-        $filtered_lines = array();
-        foreach (explode("\r\n", $output) as $line) {
-          if (strpos($line, 'DTSTAMP') === 0) {
-            continue;
-          }
-          $filtered_lines[] = $line;
-        }
-        $output = implode("\r\n", $filtered_lines);
-      }
+      $output = implode("\r\n", $filtered_lines);
     }
 
     // These steps shouldn't be run during Preview on the View page.

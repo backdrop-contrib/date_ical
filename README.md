@@ -220,6 +220,7 @@ Current Maintainers
 -------------------
 
 - John Franklin (https://github.com/sentaidigital/)
+- Laryn Kragt Bakker (https://github.com/laryn/)
 
 Credits
 -------

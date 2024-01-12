@@ -6,3 +6,4 @@ type = module
 dependencies[] = views
 dependencies[] = entity
 dependencies[] = date
+dependencies[] = system (>=1.21.0)

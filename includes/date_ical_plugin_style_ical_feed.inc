@@ -161,7 +161,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       if (empty($cal_name)) {
         $cal_name = $this->view->get_title();
         if (empty($cal_name)) {
-          $cal_name = variable_get('site_name', 'Drupal');
+          $cal_name = config_get('system.core', 'site_name');
         }
       }
       if (!empty($cal_name)) {
@@ -411,7 +411,7 @@ class date_ical_plugin_style_ical_feed extends views_plugin_style {
       // up only in the query args, meaning the filename won't be set properly
       // when users download the feed. So we need to manually instruct browsers
       // to download a .ics file.
-      if (!variable_get('clean_url', FALSE)) {
+      if (!config_get('system.core', 'clean_url')) {
         $path_array = explode('/', $this->display->display_options['path']);
         $filename = end($path_array);
         backdrop_add_http_header('Content-Disposition', "attachment; filename=\"$filename\"");

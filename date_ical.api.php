@@ -233,7 +233,7 @@ function hook_date_ical_import_timezone_alter(&$tzid, $context) {
  *     name: The name that will appear in the feed importer Mapping page.
  *     description: The description of this field shown in the Mapping page.
  *     date_ical_parse_handler: The function in the ParserVcalendar class
- *       which should be used to parse this iCal property into a Drupal field.
+ *       which should be used to parse this iCal property into a Backdrop field.
  *
  * Available date_ical_parse_handlers are:
  *   parseTextProperty

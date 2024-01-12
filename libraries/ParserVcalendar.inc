@@ -82,7 +82,7 @@ class ParserVcalendar {
         'feeeds_source' => $this->source,
         'feeds_fetcher_result' => $this->fetcherResult,
       );
-      drupal_alter('date_ical_import_timezone', $xtimezone[1], $context);
+      backdrop_alter('date_ical_import_timezone', $xtimezone[1], $context);
       $this->xtimezone = $this->_tzid_to_datetimezone($xtimezone[1]);
     }
 
@@ -106,7 +106,7 @@ class ParserVcalendar {
       while ($vcalendar_component = $this->calendar->getComponent($type)) {
         // Allow modules to alter the vcalendar component before we parse it
         // into a Feeds-compatible data array.
-        drupal_alter('date_ical_import_component', $vcalendar_component, $context2);
+        backdrop_alter('date_ical_import_component', $vcalendar_component, $context2);
         $raw_components[] = $vcalendar_component;
       }
     }
@@ -142,7 +142,7 @@ class ParserVcalendar {
               // Only warn the user if this mapping source is in use.
               foreach ($this->source->importer->processor->config['mappings'] as $mapping) {
                 if ($mapping['source'] == $property_key) {
-                  drupal_set_message(t('Date iCal does not recognize the "@name" Mapping Source, and must skip it.', array('@name' => $data['name'])), 'warning', FALSE);
+                  backdrop_set_message(t('Date iCal does not recognize the "@name" Mapping Source, and must skip it.', array('@name' => $data['name'])), 'warning', FALSE);
                   break;
                 }
               }
@@ -163,7 +163,7 @@ class ParserVcalendar {
 
       // Allow modules to alter the final parsed data before we send it to the
       // Feeds processor.
-      drupal_alter('date_ical_import_post_parse', $this->parsed_data, $context2);
+      backdrop_alter('date_ical_import_post_parse', $this->parsed_data, $context2);
 
       // Skip this event if it's earlier than the user's specified skip time.
       if (!$this->_skip_current_event()) {
@@ -394,7 +394,7 @@ class ParserVcalendar {
         'feeeds_source' => $this->source,
         'feeds_fetcher_result' => $this->fetcherResult,
       );
-      drupal_alter('date_ical_import_timezone', $tzid, $context);
+      backdrop_alter('date_ical_import_timezone', $tzid, $context);
 
       if (isset($tzid)) {
         $datetimezone = $this->_tzid_to_datetimezone($tzid);
@@ -407,7 +407,7 @@ class ParserVcalendar {
       else {
         $msg = t("No timezone was detected for one or more of the events in this feed, forcing Date iCal to use this server's timezone as a fallback.<br>
             To make timezone-less events use a different timezone, implement hook_date_ical_import_timezone_alter() in a custom module.");
-        drupal_set_message($msg, 'status', FALSE);
+        backdrop_set_message($msg, 'status', FALSE);
         $this->source->log('parse', $msg, array(), WATCHDOG_NOTICE);
         $datetimezone = new DateTimeZone(date_default_timezone_get());
       }
@@ -460,7 +460,7 @@ class ParserVcalendar {
       $msg = 'The event with UID %uid has multiple RRULEs, but the Date Repeat module only supports one. Only the first RRULE in the event will be used.
         If your events need to have a complex repeat pattern, using RDATEs should help.';
       watchdog('date_ical', $msg, array('%uid' => $uid), 'warning');
-      drupal_set_message('At least one of the events in this iCal feed has multiple RRULEs, but the Date Repeat module only supports one.
+      backdrop_set_message('At least one of the events in this iCal feed has multiple RRULEs, but the Date Repeat module only supports one.
         Only the first RRULE in an event will be used.', 'warning', FALSE);
 
       // Date Repeat will get extremely confused if it's sent multiple RRULE
@@ -479,7 +479,7 @@ class ParserVcalendar {
           As a workaround, Date iCal set the repeat count to @count. This value can be customized in the iCal parser settings.";
         watchdog('date_ical', $msg, array('%uid' => $uid, '@count' => $count), WATCHDOG_WARNING);
         if (!empty($this->config['indefinite_message_display'])) {
-          drupal_set_message(
+          backdrop_set_message(
             t("At least one of the events in this iCal feed has an indefinitely repeating RRULE, which the Date Repeat module doesn't support.<br>
               As a workaround, Date iCal set the repeat count to @count. This value can be customized in the iCal parser settings.",
             array('@count' => $count)),
@@ -519,7 +519,7 @@ class ParserVcalendar {
     catch (Exception $e) {
       // In case this is a Windows TZID, read the mapping file to try and
       // convert it to a real TZID.
-      $zones = file_get_contents(drupal_get_path('module', 'date_ical') . '/libraries/windowsZones.json');
+      $zones = file_get_contents(backdrop_get_path('module', 'date_ical') . '/libraries/windowsZones.json');
       $zones_assoc = json_decode($zones, TRUE);
       $windows_to_olson_map = array();
       foreach ($zones_assoc['supplemental']['windowsZones']['mapTimezones'] as $mapTimezone) {
@@ -547,7 +547,7 @@ class ParserVcalendar {
           array('@tz' => $tzid, '!here' => $tz_wiki, '!readme' => $help)
       );
       $this->source->log('parse', $msg, array(), WATCHDOG_WARNING);
-      drupal_set_message($msg, 'warning', FALSE);
+      backdrop_set_message($msg, 'warning', FALSE);
       $datetimezone = new DateTimeZone('UTC');
     }
     return $datetimezone;

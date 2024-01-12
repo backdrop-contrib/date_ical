@@ -44,12 +44,12 @@ class DateiCalFeedsParser extends FeedsParser {
       'source' => $source,
       'fetcher_result' => $fetcher_result,
     );
-    drupal_alter('date_ical_import_vcalendar', $calendar, $context);
+    backdrop_alter('date_ical_import_vcalendar', $calendar, $context);
 
     // We've got a vcalendar object created from the feed data. Now we need to
     // convert that vcalendar into an array of Feeds-compatible data arrays.
     // ParserVcalendar->parse() does that.
-    require_once DRUPAL_ROOT . '/' . drupal_get_path('module', 'date_ical') . '/libraries/ParserVcalendar.inc';
+    require_once BACKDROP_ROOT . '/' . backdrop_get_path('module', 'date_ical') . '/libraries/ParserVcalendar.inc';
     $parser = new ParserVcalendar($calendar, $source, $fetcher_result, $source->getConfigFor($this));
 
     // Using the stored progress pointer (or 0 if it's not set),
@@ -212,7 +212,7 @@ class DateiCalFeedsParser extends FeedsParser {
     );
 
     // Allow other modules to add custom source fields.
-    drupal_alter('date_ical_mapping_sources', $sources);
+    backdrop_alter('date_ical_mapping_sources', $sources);
 
     return $sources;
   }

@@ -106,18 +106,18 @@ function date_ical_update_7300() {
       // When this importer object got created, a warning was issued about its
       // parser plugin being missing. We corrected that warning above, so we
       // should clear it out to avoid potential confusion.
-      $messages = drupal_get_messages('warning');
+      $messages = backdrop_get_messages('warning');
       foreach ($messages['warning'] as $warning) {
-        // Calling drupal_get_messages() removed *every* warning from the
+        // Calling backdrop_get_messages() removed *every* warning from the
         // message queue, so we need to re-issue any warnings that aren't
         // about missing Feeds plugins.
         if (strpos($warning, 'Missing Feeds plugin') === FALSE) {
-          drupal_set_message($warning, 'warning');
+          backdrop_set_message($warning, 'warning');
         }
       }
       $t = get_t();
       $importer_link = l($key, "admin/structure/feeds/$key");
-      drupal_set_message($t('Date iCal updated the parser plugin for !importer.
+      backdrop_set_message($t('Date iCal updated the parser plugin for !importer.
         If that importer is defined by a feature, you will need to update that feature to match.', array('!importer' => $importer_link))
       );
     }

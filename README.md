@@ -28,7 +28,7 @@ Bugs and Feature requests should be reported in the [Issue Queue](https://github
   and [coredumperror](https://www.drupal.org/u/coredumperror).
 - The `libraries/windowsZones.json` file, which Date iCal uses to map
   Windows-style timezone names to real timezone IDs, is from Version24 of the
-  (Unicode CLDR)[https://cldr.unicode.org/].
+  [Unicode CLDR](https://cldr.unicode.org/).
 - This module bundles [a version of iCalcreator v2.20.x](https://github.com/joejoseph00/iCalcreator)
   with PHP 8.1 compatibility fixes by @joejoseph00 and @lkmorlan. This library
   was released under LGPL-2.1.

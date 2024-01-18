@@ -76,6 +76,7 @@ function date_ical_feeds_plugins() {
   $info['DateiCalFeedsParser'] = array(
     'name' => 'iCal parser',
     'description' => t('Parse iCal feeds.'),
+    'module' => 'date_ical',
     'handler' => array(
       'parent' => 'FeedsParser',
       'class' => 'DateiCalFeedsParser',

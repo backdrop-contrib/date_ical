@@ -1,0 +1,9 @@
+.ical-icon .icon {
+  width: 44px;
+  height: 44px;
+  color: #e04523;
+}
+
+.ical-icon:hover .icon {
+  color: #c82500;
+}

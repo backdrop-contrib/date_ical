@@ -257,7 +257,7 @@ class date_ical_plugin_row_ical_entity extends views_plugin_row {
           $locations = array();
           // Get full country name
           if (!empty($location_field['country'])) {
-            require_once BACKDROP_ROOT . '/includes/locale.inc';
+            require_once BACKDROP_ROOT . '/core/includes/locale.inc';
             $countries = country_get_list();
             $location_field['country'] = $countries[$location_field['country']];
           }
